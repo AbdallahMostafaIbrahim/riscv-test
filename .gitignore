@@ -1,6 +1,10 @@
 .DS_Store
 build/
 
+# Generated at run time by the Makefile: mem/default.hex (or another
+# tests/<name>.hex) is copied over this file before each sim.
+mem/inst.hex
+
 # Vivado project directory (entirely generated from vivado_project.tcl)
 vivado/
 

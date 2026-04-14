@@ -26,7 +26,10 @@ add_files -fileset sources_1 -norecurse [glob rtl/primitives/*.v \
 set_property top riscv [get_filesets sources_1]
 
 # ----- Simulation sources --------------------------------------------------
-add_files -fileset sim_1 -norecurse [list test/riscv_tb.v test/isa_tb.v]
+# Pick up every *_tb.v in test/. Add new tests by dropping another
+# test/<name>_tb.v and re-sourcing this script (or `add_files` the new
+# one by hand).
+add_files -fileset sim_1 -norecurse [glob test/*_tb.v]
 
 # Memory init files -- added by reference so edits in the repo are
 # picked up the next time the sim is launched. The file_type property
