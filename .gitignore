@@ -1,2 +1,15 @@
-.DS_STORE
-build
+.DS_Store
+build/
+
+# Vivado project directory (entirely generated from vivado_project.tcl)
+vivado/
+
+# Vivado / xsim runtime junk that lands in the repo root if you
+# ever run those tools outside a project folder.
+*.jou
+*.log
+*.str
+*.wdb
+*.pb
+.Xil/
+xsim.dir/
