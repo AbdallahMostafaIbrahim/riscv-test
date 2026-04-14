@@ -24,15 +24,15 @@ $(BUILD):
 
 integ: $(BUILD)
 	iverilog $(IVERILOG_FLAGS) -o $(BUILD)/integ $(RTL_SRC) test/riscv_tb.v
-	vvp $(BUILD)/integ
+	cd mem && vvp ../$(BUILD)/integ
 
 isa: $(BUILD)
 	iverilog $(IVERILOG_FLAGS) -o $(BUILD)/isa $(RTL_SRC) test/isa_tb.v
-	vvp $(BUILD)/isa
+	cd mem && vvp ../$(BUILD)/isa
 
 wave: $(BUILD)
 	iverilog $(IVERILOG_FLAGS) -DDUMP_VCD -o $(BUILD)/integ_wave $(RTL_SRC) test/riscv_tb.v
-	vvp $(BUILD)/integ_wave
+	cd mem && vvp ../$(BUILD)/integ_wave
 
 clean:
 	rm -rf $(BUILD)

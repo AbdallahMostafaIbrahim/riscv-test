@@ -28,13 +28,14 @@ set_property top riscv [get_filesets sources_1]
 # ----- Simulation sources --------------------------------------------------
 add_files -fileset sim_1 -norecurse [list test/riscv_tb.v test/isa_tb.v]
 
-# Memory init files -- imported into the sim working dir so $readmemh finds
-# them when the hex files are referenced by bare filename.
-add_files -fileset sim_1 -norecurse [list mem/inst.hex mem/data.hex]
+# Memory init files -- imported (copied) into the project so the project
+# is self-contained, then marked as "Memory Initialization Files" so
+# Vivado copies them into the xsim working directory at sim time.
+import_files -fileset sim_1 -norecurse [list mem/inst.hex mem/data.hex]
 set_property file_type "Memory Initialization Files" \
-    [get_files mem/inst.hex]
+    [get_files inst.hex]
 set_property file_type "Memory Initialization Files" \
-    [get_files mem/data.hex]
+    [get_files data.hex]
 
 set_property top riscv_tb [get_filesets sim_1]
 

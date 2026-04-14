@@ -33,7 +33,7 @@ module data_mem (
     reg [31:0] mem [0:1023];
 
     initial begin
-        $readmemh("mem/data.hex", mem);
+        $readmemh("data.hex", mem);
     end
 
     wire [9:0] word_addr;

@@ -24,7 +24,7 @@ module inst_mem (
     reg [31:0] mem [0:1023];
 
     initial begin
-        $readmemh("mem/inst.hex", mem);
+        $readmemh("inst.hex", mem);
     end
 
     assign data_out = mem[addr[11:2]];

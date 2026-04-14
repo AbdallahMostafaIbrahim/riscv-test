@@ -36,7 +36,7 @@ module riscv_tb;
 
 `ifdef DUMP_VCD
     initial begin
-        $dumpfile("build/dump.vcd");
+        $dumpfile("../build/dump.vcd");
         $dumpvars(0, riscv_tb);
     end
 `endif
