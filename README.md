@@ -12,14 +12,8 @@ CSCE 3301 Computer Architecture, Spring 2026.
 ## Milestone 2 Scope
 
 This milestone delivers a **single-cycle** RV32I core with **separate
-instruction and data memories** and a basic test suite that exercises
-every instruction at least once. Pipelining, single-ported unified
-memory, hazard handling, and FPGA bring-up are deferred to MS3.
-
-No pipelining is present in this milestone — every instruction
-completes in one clock cycle.
-
-## Release Notes
+instruction and data memories** and a basic tests that cover
+every instruction at least once.
 
 ### What Works
 
@@ -32,101 +26,40 @@ completes in one clock cycle.
   - Upper-immediate: `lui auipc`
   - Jumps: `jal jalr`
 - All **5 halting opcodes** (`ecall ebreak fence fence.tso pause`)
-  correctly freeze the PC and suppress further register / memory
+  correctly freeze the PC and stop further register / memory
   writes.
 - **Self-checking testbenches** for each instruction type, all
   passing:
   - `test/i-type_tb.v` — 9 checks
   - `test/r-type_tb.v` — 10 checks
-  - `test/s-type_tb.v` — 3 checks (dmem contents)
+  - `test/s-type_tb.v` — 3 checks (data memory contents)
   - `test/load_tb.v` — 5 checks
   - `test/b-type_tb.v` — 12 checks (6 taken + 6 poison-skip)
   - `test/u-type_tb.v` — 2 checks
   - `test/j-type_tb.v` — 5 checks (link + landing + poison-skip)
-  - Plus the pre-existing `test/isa_tb.v` and
-    `test/fibonacci_tb.v`.
-- A minimal **RV32I assembler** (`tools/asm.py`) supporting ABI /
-  numeric register names, labels, and every implemented opcode.
 
 ### What Doesn't Work / What's Deferred
 
-- No pipelining yet.
-- No hazard detection or forwarding.
-- No unified single-ported memory; instruction and data memories are
+- No unified single-ported memory, instruction and data memories are
   still separate.
-- FPGA synthesis has not been attempted on the Nexys A7.
 
 ## Assumptions
 
 - **Memory sizes:** 4 KiB instruction memory, 4 KiB data memory,
-  both organised as 1024 words of 32 bits. Both are initialised
-  from hex files via `$readmemh` (`mem/inst.hex` and `mem/data.hex`).
+  both have 1024 words of 32 bits. Both are initialised
+  from hex files using `$readmemh` (`mem/inst.hex` and `mem/data.hex`).
 - **Byte-addressability:** data memory is byte-addressable by using a
-  4-bit per-byte write mask; reads always return the full 32-bit word
-  and the `load_unit` performs byte / halfword selection and sign- or
-  zero-extension.
-- **Alignment:** halfword and word accesses are assumed aligned.
-  Unaligned accesses are not trapped.
-- **Halt behaviour:** the halt opcodes do not jump to a trap handler
-  or update any CSR; they merely freeze the PC (sticky behaviour).
+  4-bit per-byte write mask. Reads always return the full 32-bit word
+  and the `load_unit` performs byte / halfword selection.
+- **Halt behaviour:** the halt opcodes just freeze the PC.
 - **Reset:** synchronous active-high reset clears the PC and the
-  register file. `x0` is hard-wired to zero and ignores writes.
-- **Endianness:** little-endian byte ordering in data memory, matching
-  the RV32I convention.
+  register file.
 
 ## Issues Faced
 
-### 1. Byte-addressable data memory
+### 1. Control Unit Module is too large
 
-The spec requires byte-addressable memory but a naive 32-bit-word
-array breaks `sb` and `sh`: a byte store would corrupt the other
-three bytes of the word.
-
-**Fix:** model `data_mem` as a word-addressable array indexed by
-`addr[11:2]`, but drive writes through a 4-bit `write_mask` that
-gates each byte lane independently:
-
-```verilog
-if (write_mask[0]) mem[word_addr][ 7: 0] <= wdata[ 7: 0];
-if (write_mask[1]) mem[word_addr][15: 8] <= wdata[15: 8];
-if (write_mask[2]) mem[word_addr][23:16] <= wdata[23:16];
-if (write_mask[3]) mem[word_addr][31:24] <= wdata[31:24];
-```
-
-The `store_unit` translates `funct3` + `addr_low[1:0]` into the
-correct mask (`0001`, `0010`, `0100`, `1000` for `sb`; `0011` /
-`1100` for `sh`; `1111` for `sw`) and also replicates the byte /
-halfword into the right lane of `wdata` so the lane the mask enables
-is already aligned.
-
-The symmetric `load_unit` extracts the right byte or halfword from
-the full word returned by `data_mem` and sign- or zero-extends per
-`funct3`.
-
-### 2. Branches share the ALU with arithmetic
-
-Branch conditions need signed/unsigned comparisons with carry and
-overflow awareness. Rather than duplicate the adder, the control
-unit forces `alu_sel = SUB` on every branch so the ALU's `z`, `c`,
-`n`, `v` flags drive a small `branch_unit` that maps the six
-`funct3` codes to a single `taken` bit.
-
-### 3. Compact ALU selector encoding
-
-The ALU selector was initially 5-bit (`{funct7[5], funct3}`) which
-was a nice pass-through but included unused codes. It was compressed
-to the 4-bit encoding defined in `rtl/core/defines.v` (`ALU_ADD`,
-`ALU_SUB`, ...). The control unit now maps `{inst[30], funct3}` to
-this 4-bit selector via explicit case statements.
-
-### 4. Magic-number hygiene
-
-Per the Verilog coding guidelines ("do not use hard-coded numeric
-values"), all opcodes, funct3 codes, branch codes, instruction-field
-slices and the ALU selector values are defined as `` `define ``
-macros in `rtl/core/defines.v` and `` `include `` d wherever needed.
-The Makefile adds `-I rtl/core` so the include resolves regardless of
-compilation directory.
+The initial `control_unit.v` implemented all 37 RV32I instructions plus the 5 halting opcodes in a single enormous always block with a massive `case` statement. This makes the module harder to maintain, so we will probably split it into multiple modules in the next milestone.
 
 ## How to Build and Run
 
@@ -189,15 +122,3 @@ Mapped against the deliverable structure in the project description:
 ├── coding_guidelines.md
 └── Makefile
 ```
-
-## Plan for MS3
-
-- 5-stage pipeline (IF / ID / EX / MEM / WB).
-- Unified single-ported byte-addressable memory, issuing every
-  other cycle to resolve the structural hazard (effective CPI ≈ 2).
-- Data-hazard detection (RAW) with register-file write-before-read
-  in the same cycle.
-- Control-hazard handling (branches / jumps).
-- Full regression on FPGA (Nexys A7) — synthesize, place and
-  route, program, exercise via switches and LEDs.
-- Revisit bonuses after the base pipeline is green.
