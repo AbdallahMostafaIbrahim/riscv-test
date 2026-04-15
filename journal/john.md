@@ -1,52 +1,34 @@
-# Journal — John Saif (900232149)
+# John Saif (900232149)
 
-Activity log for Project 1 (riscv32Project). Format follows the
-project description example.
+### Byte-addressable data memory
 
----
+- Designed the per-byte `write_mask` interface between
+  `store_unit`, `data_mem`, and `load_unit`.
+- Implemented `rtl/memory/`.
 
-April 14, 10:30 AM: Project kickoff with Abdallah. Agreed on
-                    directory layout, naming conventions, and
-                    single `defines.v` for constants.
+### Register File
 
-April 14, 04:15 PM: Drafted the RV32I assembler (tools/asm.py).
-                    Two-pass scheme: first pass records labels
-                    and PCs, second pass encodes each
-                    instruction. Supports every opcode the core
-                    needs plus ABI register names and labels.
+- `rtl/core/reg_file.v`: 32 × 32 bits, `x0` hard-wired to zero,
+  synchronous write with async reset.
 
-April 14, 07:00 PM: Integration testbench (`test/riscv_tb.v`)
-                    driving the default.s coverage program. Runs
-                    until `ebreak` then prints the full register
-                    file + first eight dmem words.
+### Test infrastructure
 
-April 15, 10:00 AM: Implemented the ALU (all 10 ops), separated
-                    SUB from the generic case by feeding `~b + 1`
-                    through the same ripple adder. Status flags
-                    (z / c / n / v) exposed for branch_unit.
+- Wrote the per-instruction-type assembly programs
+  (`tests/i-type.s`, `r-type.s`, `s-type.s`, `load.s`, `b-type.s`,
+  `u-type.s`, `j-type.s`).
+- Wrote the matching self-checking testbenches in `test/`.
+- Wrote `test/dump_tb.v` for one-off tests dumping the register file and memory
 
-April 15, 12:30 PM: Branch unit driven by the four ALU flags.
-                    Hooked up the PC adder (pc + imm) and the
-                    PC mux for jumps / branches / JALR target
-                    alignment.
+### Execute path
 
-April 15, 02:40 PM: Paired with Abdallah on byte-addressable
-                    memory. Wrote the store / load unit tests
-                    (s-type.s and load.s) and their
-                    testbenches. Caught a bug where SH at addr[1]
-                    was writing to the wrong halfword.
+- `rtl/core/alu.v`: all 10 RV32I ops. SUB reuses the adder via
+  `~b + 1`. Exposes Z,C,N,V flags so the branch unit can
+  evaluate from the subtraction.
+- `rtl/core/branch_unit.v`: maps the six branch `funct3` codes
+  onto the ALU flags.
 
-April 15, 04:55 PM: Branch testbench initially only checked the
-                    "landed" register. Extended the assembly to
-                    also poison a per-branch register so the
-                    testbench can prove each branch actually
-                    skipped its poison.
+### Program counter and control transfer
 
-April 15, 07:45 PM: Read through the coding guidelines document
-                    and did a style pass: file headers, include
-                    guards on defines.v, no bare numeric constants
-                    in case statements.
-
----
-
-*Add further entries below as MS3 work begins.*
+- PC + imm adder and the next-PC mux across `PC + 4`, branch
+  target, JAL target, and JALR target (with 2-byte alignment via
+  `alu_out & ~1`).
