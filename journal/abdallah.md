@@ -1,5 +1,11 @@
 # Abdallah Mostafa Ibrahim (900232544)
 
+### Byte-addressable data memory
+
+- Designed the per-byte `write_mask` interface between
+  `store_unit`, `data_mem`, and `load_unit`.
+- Implemented `rtl/memory/`.
+
 ### Primitives
 
 - All of `rtl/primitives/*`: `flip_flop`, `register`,

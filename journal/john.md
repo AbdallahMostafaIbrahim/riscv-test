@@ -1,11 +1,5 @@
 # John Saif (900232149)
 
-### Byte-addressable data memory
-
-- Designed the per-byte `write_mask` interface between
-  `store_unit`, `data_mem`, and `load_unit`.
-- Implemented `rtl/memory/`.
-
 ### Register File
 
 - `rtl/core/reg_file.v`: 32 × 32 bits, `x0` hard-wired to zero,
