@@ -1,4 +1,4 @@
-# Project 1 — RV32I RISC-V Processor (Milestone 2)
+# Project 1 RV32I RISC-V Processor (Milestone 2)
 
 CSCE 3301 Computer Architecture, Spring 2026.
 
