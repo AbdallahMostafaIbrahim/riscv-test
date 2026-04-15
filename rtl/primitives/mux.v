@@ -1,8 +1,8 @@
 /*******************************************************************
 *
 * Module: mux.v
-* Project: femtoRV32
-* Author: CSCE 3301 Team
+* Project: RISCV Processor
+* Author: Arch Island
 * Description: Parameterized N-bit 2-to-1 multiplexer.
 *              out = (sel == 0) ? a : b
 *

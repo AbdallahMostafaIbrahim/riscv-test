@@ -1,8 +1,8 @@
 /*******************************************************************
 *
 * Module: dump_tb.v
-* Project: femtoRV32
-* Author: CSCE 3301 Team
+* Project: RISCV Processor
+* Author: Arch Island
 * Description: Generic testbench for ad-hoc programs. Runs the core
 *              from reset until the halted flag rises (or a cycle
 *              cap expires), then prints the final PC and the full
@@ -48,12 +48,12 @@ module dump_tb;
         cycles = 0;
         #20 rst = 1'b0;
 
-        while (dut.halt_u.halted === 1'b0 && cycles < 5000) begin
+        while (dut.halted === 1'b0 && cycles < 5000) begin
             @(posedge clk);
             cycles = cycles + 1;
         end
 
-        if (dut.halt_u.halted === 1'b1)
+        if (dut.halted === 1'b1)
             $display("HALT at cycle %0d, PC = %08h", cycles, dut.pc_out);
         else
             $display("TIMEOUT after %0d cycles, PC = %08h",

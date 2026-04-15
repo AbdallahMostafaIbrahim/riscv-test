@@ -1,8 +1,8 @@
 /*******************************************************************
 *
 * Module: isa_tb.v
-* Project: femtoRV32
-* Author: CSCE 3301 Team
+* Project: RISCV Processor
+* Author: Arch Island
 * Description: Table-driven per-instruction testbench. For each
 *              case the testbench pulses reset, pre-loads the
 *              register file and a data-memory cell with known
@@ -71,7 +71,7 @@ module isa_tb;
 
             // Phase 3 - clock until halted (with a cap).
             cycles = 0;
-            while (dut.halt_u.halted === 1'b0 && cycles < 200) begin
+            while (dut.halted === 1'b0 && cycles < 200) begin
                 @(posedge clk);
                 cycles = cycles + 1;
             end

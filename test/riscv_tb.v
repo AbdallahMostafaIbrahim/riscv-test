@@ -1,8 +1,8 @@
 /*******************************************************************
 *
 * Module: riscv_tb.v
-* Project: femtoRV32
-* Author: CSCE 3301 Team
+* Project: RISCV Processor
+* Author: Arch Island
 * Description: End-to-end integration testbench for the single-cycle
 *              RV32I core. Loads mem/inst.hex via the CPU's instruction
 *              memory, runs until the sticky halted flag is asserted
@@ -87,12 +87,12 @@ module riscv_tb;
         errors = 0;
         #20 rst = 1'b0;
 
-        while (dut.halt_u.halted === 1'b0 && cycles < 2000) begin
+        while (dut.halted === 1'b0 && cycles < 2000) begin
             @(posedge clk);
             cycles = cycles + 1;
         end
 
-        if (dut.halt_u.halted === 1'b1)
+        if (dut.halted === 1'b1)
             $display("HALT reached at cycle %0d (PC = %08h)",
                      cycles, dut.pc_out);
         else

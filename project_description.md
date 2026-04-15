@@ -1,6 +1,6 @@
 # CSCE 3301 – Computer Architecture (Spring 2026)
 
-## Project 1: femtoRV32 — RISC-V FPGA Implementation and Testing
+## Project 1: riscv32Project — RISC-V FPGA Implementation and Testing
 
 ## 1. Requirements
 
@@ -51,12 +51,12 @@ Each bonus is worth 5% (max 10%):
 
 ## 4. Deliverables
 
-| Milestone | Due | Contents |
-|-----------|-----|----------|
-| MS1 (Done) | — | Team names, IDs |
-| MS2 | Thu Apr 16 | Single-cycle datapath block diagram + Verilog for all RV32I (as above). Basic tests covering all instructions. Separate instruction/data memories allowed. No thorough testing required. FPGA testing optional. |
-| MS3 | Thu Apr 23 | Pipelined datapath block diagram + Verilog. **Single single-ported memory** for instructions and data. Final implementation and report with proof of thorough FPGA testing (all 42 instructions + hazards) and any bonuses. |
-| Demo | TBA | Reserve slot via shared Google sheet. Run at least one test case and answer implementation/report questions. |
+| Milestone  | Due        | Contents                                                                                                                                                                                                                    |
+| ---------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| MS1 (Done) | —          | Team names, IDs                                                                                                                                                                                                             |
+| MS2        | Thu Apr 16 | Single-cycle datapath block diagram + Verilog for all RV32I (as above). Basic tests covering all instructions. Separate instruction/data memories allowed. No thorough testing required. FPGA testing optional.             |
+| MS3        | Thu Apr 23 | Pipelined datapath block diagram + Verilog. **Single single-ported memory** for instructions and data. Final implementation and report with proof of thorough FPGA testing (all 42 instructions + hazards) and any bonuses. |
+| Demo       | TBA        | Reserve slot via shared Google sheet. Run at least one test case and answer implementation/report questions.                                                                                                                |
 
 ## 5. Grading
 

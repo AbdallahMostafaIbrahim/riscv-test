@@ -1,4 +1,4 @@
-# Helper procs for running femtoRV32 programs from the Vivado Tcl Console.
+# Helper procs for running riscv32Project programs from the Vivado Tcl Console.
 #
 # Source once per session (from the project root):
 #     source vivado_run.tcl

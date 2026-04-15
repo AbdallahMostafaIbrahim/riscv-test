@@ -1,18 +1,13 @@
 /*******************************************************************
 *
 * Module: inst_mem.v
-* Project: femtoRV32
-* Author: CSCE 3301 Team
-* Description: Byte-addressable instruction memory. 4 KiB arranged
-*              as 1024 words of 32 bits. Read-only; contents are
-*              loaded from mem/inst.hex at elaboration time via
-*              $readmemh. Misaligned fetches silently return the
-*              word at addr[11:2].
+* Project: RISCV Processor
+* Author: Arch Island
+* Description: Byte-addressable instruction memory. 4 KiB of 1024 words.
+*              a word is 32 bits.
 *
-* Change history: 2026-04-14 - Cleanup pass.
-*                 2026-04-14 - MS2: widened to 4 KiB and switched
-*                              to 32-bit byte address on the port.
-*
+*              Initial contents are loaded from inst.hex using
+*              $readmemh.
 **********************************************************************/
 `timescale 1ns / 1ps
 

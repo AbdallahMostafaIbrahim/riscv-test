@@ -1,4 +1,4 @@
-# femtoRV32 - Icarus Verilog build
+# riscv32Project - Icarus Verilog build
 #
 # Usage:
 #   make                 - integ + isa (MS2 regression)
@@ -9,13 +9,43 @@
 #   make asm PROG=<name> - assemble tests/<name>.s into mem/<name>.hex
 #   make clean
 
-RTL_SRC := $(wildcard rtl/primitives/*.v) \
-           $(wildcard rtl/core/*.v) \
-           $(wildcard rtl/memory/*.v)
+RTL_SRC := $(filter-out rtl/core/defines.v, \
+             $(wildcard rtl/primitives/*.v) \
+             $(wildcard rtl/core/*.v) \
+             $(wildcard rtl/memory/*.v))
 
-IVERILOG_FLAGS := -g2012
+IVERILOG_FLAGS := -g2012 -I rtl/core
 BUILD          := build
-ASM            := python3 tools/asm.py
+
+# Detect shell: Windows cmd vs a Unix-like shell (bash/sh/zsh on any OS).
+# $(OS) is Windows_NT inside Git Bash too, so we probe the shell instead
+# by running `echo` -- cmd's echo with no args prints "ECHO is on.", Unix
+# echo prints an empty line.
+ifeq ($(shell echo),)
+  IS_UNIX_SHELL := 1
+else
+  IS_UNIX_SHELL := 0
+endif
+
+ifeq ($(IS_UNIX_SHELL),1)
+  CP      := cp
+  RMRF    := rm -rf
+  RMFILE  := rm -f
+  MKDIR   := mkdir -p
+  PYTHON  := python3
+  FIXPATH  = $1
+  NULL    := 2>/dev/null
+else
+  CP      := copy /Y
+  RMRF    := rmdir /S /Q
+  RMFILE  := del /Q /F
+  MKDIR   := mkdir
+  PYTHON  := python
+  FIXPATH  = $(subst /,\,$1)
+  NULL    := 2> NUL
+endif
+
+ASM := $(PYTHON) tools/asm.py
 
 # Default program for the regression testbench
 DEFAULT_PROG := default
@@ -28,7 +58,7 @@ PROG ?= $(DEFAULT_PROG)
 all: integ isa
 
 $(BUILD):
-	@mkdir -p $(BUILD)
+	-@$(MKDIR) $(BUILD) $(NULL)
 
 # --------------------------------------------------------------------------
 # Assembly rule: tests/<name>.s -> mem/<name>.hex
@@ -41,7 +71,7 @@ mem/%.hex: tests/%.s tools/asm.py
 # $readmemh("inst.hex") finds it).
 # --------------------------------------------------------------------------
 integ: $(BUILD) mem/$(DEFAULT_PROG).hex
-	cp mem/$(DEFAULT_PROG).hex mem/inst.hex
+	$(CP) $(call FIXPATH,mem/$(DEFAULT_PROG).hex) $(call FIXPATH,mem/inst.hex)
 	iverilog $(IVERILOG_FLAGS) -o $(BUILD)/integ $(RTL_SRC) test/riscv_tb.v
 	cd mem && vvp ../$(BUILD)/integ
 
@@ -50,7 +80,7 @@ isa: $(BUILD)
 	cd mem && vvp ../$(BUILD)/isa
 
 wave: $(BUILD) mem/$(DEFAULT_PROG).hex
-	cp mem/$(DEFAULT_PROG).hex mem/inst.hex
+	$(CP) $(call FIXPATH,mem/$(DEFAULT_PROG).hex) $(call FIXPATH,mem/inst.hex)
 	iverilog $(IVERILOG_FLAGS) -DDUMP_VCD -o $(BUILD)/integ_wave \
 	         $(RTL_SRC) test/riscv_tb.v
 	cd mem && vvp ../$(BUILD)/integ_wave
@@ -61,7 +91,7 @@ wave: $(BUILD) mem/$(DEFAULT_PROG).hex
 # prints every register so you can read the result.
 # --------------------------------------------------------------------------
 run: $(BUILD) mem/$(PROG).hex
-	cp mem/$(PROG).hex mem/inst.hex
+	$(CP) $(call FIXPATH,mem/$(PROG).hex) $(call FIXPATH,mem/inst.hex)
 	iverilog $(IVERILOG_FLAGS) -o $(BUILD)/dump $(RTL_SRC) test/dump_tb.v
 	cd mem && vvp ../$(BUILD)/dump
 
@@ -74,9 +104,10 @@ asm: mem/$(PROG).hex
 # tests/<name>.s plus test/<name>_tb.v; this rule handles the rest.
 # --------------------------------------------------------------------------
 test-%: $(BUILD) mem/%.hex test/%_tb.v
-	cp mem/$*.hex mem/inst.hex
+	$(CP) $(call FIXPATH,mem/$*.hex) $(call FIXPATH,mem/inst.hex)
 	iverilog $(IVERILOG_FLAGS) -o $(BUILD)/$* $(RTL_SRC) test/$*_tb.v
 	cd mem && vvp ../$(BUILD)/$*
 
 clean:
-	rm -rf $(BUILD) mem/inst.hex
+	-$(RMRF) $(BUILD) $(NULL)
+	-$(RMFILE) $(call FIXPATH,mem/inst.hex) $(NULL)

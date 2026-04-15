@@ -1,8 +1,8 @@
 /*******************************************************************
 *
 * Module: ripple.v
-* Project: femtoRV32
-* Author: CSCE 3301 Team
+* Project: RISCV Processor
+* Author: Arch Island
 * Description: Parameterized N-bit ripple-carry adder with carry-in
 *              and carry-out. Replaces the previous rca module.
 *

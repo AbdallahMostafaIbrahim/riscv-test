@@ -1,8 +1,8 @@
 /*******************************************************************
 *
 * Module: flip_flop.v
-* Project: femtoRV32
-* Author: CSCE 3301 Team
+* Project: RISCV Processor
+* Author: Arch Island
 * Description: Positive-edge-triggered D flip-flop with async
 *              active-high reset.
 *

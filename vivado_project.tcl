@@ -1,4 +1,4 @@
-# Generate a Vivado project for femtoRV32.
+# Generate a Vivado project for riscv32Project.
 #
 # Usage (from the repo root):
 #   vivado -mode batch -source vivado_project.tcl
@@ -6,7 +6,7 @@
 # Or from the Vivado Tcl console:
 #   cd <repo-root>; source vivado_project.tcl
 
-set proj_name   "femtorv32"
+set proj_name   "riscv32Project"
 set proj_dir    "./vivado"
 set part_name   "xc7a100tcsg324-1"   ;# Nexys A7-100T; use xc7a50tcsg324-1 for 50T
 set board_part  "digilentinc.com:nexys-a7-100t:part0:1.2"

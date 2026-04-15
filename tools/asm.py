@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Minimal RV32I assembler for femtoRV32.
+Minimal RV32I assembler for riscv32Project.
 
 Supports every instruction the core implements:
     ADD  SUB  SLL  SLT  SLTU  XOR  SRL  SRA  OR  AND

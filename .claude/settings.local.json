@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(iverilog -V)",
+      "Bash(scoop install:*)",
+      "Bash(make)",
+      "Bash(make clean:*)",
+      "Bash(cmd //c \"make clean && make\")",
+      "Bash(cmd //c \"del /F /Q \\\\\\\\\\\\\\\\?\\\\\\\\E:\\\\\\\\Stuff\\\\\\\\gam3a\\\\\\\\riscv-test\\\\\\\\NUL\")",
+      "Bash(cmd //c 'del \\\\\\\\?\\\\E:\\\\Stuff\\\\gam3a\\\\riscv-test\\\\NUL')",
+      "Bash(powershell.exe -Command \"Remove-Item -LiteralPath '\\\\\\\\?\\\\E:\\\\Stuff\\\\gam3a\\\\riscv-test\\\\NUL' -Force\")",
+      "Bash(powershell.exe -Command \"Remove-Item -LiteralPath '\\\\\\\\\\\\\\\\?\\\\\\\\E:\\\\\\\\Stuff\\\\\\\\gam3a\\\\\\\\riscv-test\\\\\\\\NUL' -Force\")",
+      "Bash(powershell.exe -Command \"[System.IO.File]::Delete\\('\\\\\\\\\\\\\\\\?\\\\\\\\E:\\\\\\\\Stuff\\\\\\\\gam3a\\\\\\\\riscv-test\\\\\\\\NUL'\\)\")",
+      "Bash(python tools/asm.py tests/i-type.s /tmp/i-type-check.hex)",
+      "Read(//tmp/**)",
+      "Bash(python tools/asm.py tests/r-type.s /tmp/r-type-check.hex)",
+      "Bash(make run:*)",
+      "Bash(make test-j-type:*)",
+      "Bash(make test-b-type:*)"
+    ]
+  }
+}

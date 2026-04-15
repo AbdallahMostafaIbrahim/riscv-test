@@ -1,16 +1,11 @@
 /*******************************************************************
 *
 * Module: reg_file.v
-* Project: femtoRV32
-* Author: CSCE 3301 Team
-* Description: 32 x 32-bit RISC-V register file. Two read ports and
-*              one write port. x0 is hard-wired to zero (writes to
-*              address 0 are ignored). Writes are synchronous on the
-*              positive clock edge; reads are combinational.
-*
-* Change history: 2026-04-14 - Cleanup pass: header, posedge clk,
-*                              non-blocking assignment, lowercase
-*                              port/variable names.
+* Project: RISCV Processor
+* Author: Arch Island
+* Description: 32 x 32-bit RISC-V register file. x0 is hard-wired to zero.
+*              Writes are synchronous on the positive clock edge,
+*              while reads are combinational.
 *
 **********************************************************************/
 `timescale 1ns / 1ps

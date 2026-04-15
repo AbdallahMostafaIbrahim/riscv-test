@@ -1,8 +1,8 @@
 /*******************************************************************
 *
 * Module: register.v
-* Project: femtoRV32
-* Author: CSCE 3301 Team
+* Project: RISCV Processor
+* Author: Arch Island
 * Description: Parameterized N-bit register with synchronous load
 *              enable and async active-high reset. Built from
 *              individual flip_flop primitives driven by a 2:1 mux.

@@ -1,8 +1,8 @@
 /*******************************************************************
 *
 * Module: full_adder.v
-* Project: femtoRV32
-* Author: CSCE 3301 Team
+* Project: RISCV Processor
+* Author: Arch Island
 * Description: 1-bit full adder used as the building block of the
 *              ripple-carry adder.
 *

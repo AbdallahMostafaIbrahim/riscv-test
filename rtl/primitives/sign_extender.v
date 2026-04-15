@@ -1,8 +1,8 @@
 /*******************************************************************
 *
 * Module: sign_extender.v
-* Project: femtoRV32
-* Author: CSCE 3301 Team
+* Project: RISCV Processor
+* Author: Arch Island
 * Description: Parameterized sign extender from N bits to M bits.
 *
 * Change history: 2026-04-14 - Cleanup pass: header, formatting.
