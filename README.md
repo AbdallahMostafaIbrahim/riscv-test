@@ -104,12 +104,9 @@ Mapped against the deliverable structure in the project description:
 │   ├── memory/             #   data_mem.v, inst_mem.v, load_unit.v,
 │   │                       #   store_unit.v
 │   └── primitives/         #   flip_flop.v, full_adder.v, mux.v,
-│                           #   register.v, ripple.v, sign_extender.v
+│                           #   register.v, ripple.v
 ├── test/                   # test/ (Verilog testbenches)
 │   ├── i-type_tb.v ... j-type_tb.v
-│   ├── isa_tb.v
-│   ├── fibonacci_tb.v
-│   ├── riscv_tb.v          # integration regression (mem/default.hex)
 │   └── dump_tb.v           # ad-hoc register dump
 ├── tests/                  # RISC-V assembly programs
 │   ├── i-type.s ... j-type.s

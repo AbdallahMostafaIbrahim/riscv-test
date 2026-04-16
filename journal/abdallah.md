@@ -9,7 +9,7 @@
 ### Primitives
 
 - All of `rtl/primitives/*`: `flip_flop`, `register`,
-  `full_adder`, `ripple`, `mux`, `sign_extender`.
+  `full_adder`, `ripple`, `mux`.
 
 ### Control path
 

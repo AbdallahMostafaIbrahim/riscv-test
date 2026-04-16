@@ -1,12 +1,9 @@
 # riscv32Project - Icarus Verilog build
 #
 # Usage:
-#   make                 - integ + isa (MS2 regression)
-#   make integ           - integration testbench (uses mem/default.hex)
-#   make isa             - ISA-table testbench
-#   make wave            - re-run integ and dump build/dump.vcd
-#   make run PROG=<name> - assemble tests/<name>.s and run dump_tb on it
-#   make asm PROG=<name> - assemble tests/<name>.s into mem/<name>.hex
+#   make run PROG=<name>  - assemble tests/<name>.s and run dump_tb on it
+#   make asm PROG=<name>  - assemble tests/<name>.s into mem/<name>.hex
+#   make test-<name>      - run tests/<name>.s against test/<name>_tb.v
 #   make clean
 
 RTL_SRC := $(filter-out rtl/core/defines.v, \
@@ -53,9 +50,7 @@ DEFAULT_PROG := default
 # User-selected program for `make run` / `make asm`
 PROG ?= $(DEFAULT_PROG)
 
-.PHONY: all integ isa wave run asm clean
-
-all: integ isa
+.PHONY: run asm clean
 
 $(BUILD):
 	-@$(MKDIR) $(BUILD) $(NULL)
@@ -65,25 +60,6 @@ $(BUILD):
 # --------------------------------------------------------------------------
 mem/%.hex: tests/%.s tools/asm.py
 	$(ASM) $< $@
-
-# --------------------------------------------------------------------------
-# Regression: always uses mem/default.hex (copied into mem/inst.hex so
-# $readmemh("inst.hex") finds it).
-# --------------------------------------------------------------------------
-integ: $(BUILD) mem/$(DEFAULT_PROG).hex
-	$(CP) $(call FIXPATH,mem/$(DEFAULT_PROG).hex) $(call FIXPATH,mem/inst.hex)
-	iverilog $(IVERILOG_FLAGS) -o $(BUILD)/integ $(RTL_SRC) test/riscv_tb.v
-	cd mem && vvp ../$(BUILD)/integ
-
-isa: $(BUILD)
-	iverilog $(IVERILOG_FLAGS) -o $(BUILD)/isa $(RTL_SRC) test/isa_tb.v
-	cd mem && vvp ../$(BUILD)/isa
-
-wave: $(BUILD) mem/$(DEFAULT_PROG).hex
-	$(CP) $(call FIXPATH,mem/$(DEFAULT_PROG).hex) $(call FIXPATH,mem/inst.hex)
-	iverilog $(IVERILOG_FLAGS) -DDUMP_VCD -o $(BUILD)/integ_wave \
-	         $(RTL_SRC) test/riscv_tb.v
-	cd mem && vvp ../$(BUILD)/integ_wave
 
 # --------------------------------------------------------------------------
 # Ad-hoc programs: `make run PROG=simple` assembles tests/simple.s and
