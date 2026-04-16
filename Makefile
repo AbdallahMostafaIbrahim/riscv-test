@@ -1,18 +1,22 @@
 # riscv32Project - Icarus Verilog build
 #
 # Usage:
-#   make run PROG=<name>  - assemble tests/<name>.s and run dump_tb on it
-#   make asm PROG=<name>  - assemble tests/<name>.s into mem/<name>.hex
-#   make test-<name>      - run tests/<name>.s against test/<name>_tb.v
+#   make run PROG=<name>  - assemble test/asm/<name>.s and run dump_tb on it
+#   make asm PROG=<name>  - assemble test/asm/<name>.s into test/mem/<name>.hex
+#   make test-<name>      - run test/asm/<name>.s against test/test_benches/<name>_tb.v
 #   make clean
 
-RTL_SRC := $(filter-out rtl/core/defines.v, \
-             $(wildcard rtl/primitives/*.v) \
-             $(wildcard rtl/core/*.v) \
-             $(wildcard rtl/memory/*.v))
+RTL_SRC := $(filter-out verilog/core/defines.v, \
+             $(wildcard verilog/primitives/*.v) \
+             $(wildcard verilog/core/*.v) \
+             $(wildcard verilog/memory/*.v))
 
-IVERILOG_FLAGS := -g2012 -I rtl/core
+IVERILOG_FLAGS := -g2012 -I verilog/core
 BUILD          := build
+
+ASM_DIR := test/asm
+MEM_DIR := test/mem
+TB_DIR  := test/test_benches
 
 # Detect shell: Windows cmd vs a Unix-like shell (bash/sh/zsh on any OS).
 # $(OS) is Windows_NT inside Git Bash too, so we probe the shell instead
@@ -52,38 +56,42 @@ PROG ?= $(DEFAULT_PROG)
 
 .PHONY: run asm clean
 
+# Keep generated .hex files -- make treats them as intermediates of test-%
+# otherwise and deletes them after the run.
+.PRECIOUS: $(MEM_DIR)/%.hex
+
 $(BUILD):
 	-@$(MKDIR) $(BUILD) $(NULL)
 
 # --------------------------------------------------------------------------
-# Assembly rule: tests/<name>.s -> mem/<name>.hex
+# Assembly rule: test/asm/<name>.s -> test/mem/<name>.hex
 # --------------------------------------------------------------------------
-mem/%.hex: tests/%.s tools/asm.py
+$(MEM_DIR)/%.hex: $(ASM_DIR)/%.s tools/asm.py
 	$(ASM) $< $@
 
 # --------------------------------------------------------------------------
-# Ad-hoc programs: `make run PROG=simple` assembles tests/simple.s and
+# Ad-hoc programs: `make run PROG=simple` assembles test/asm/simple.s and
 # runs dump_tb against it. No hard-coded expected values -- the dump
 # prints every register so you can read the result.
 # --------------------------------------------------------------------------
-run: $(BUILD) mem/$(PROG).hex
-	$(CP) $(call FIXPATH,mem/$(PROG).hex) $(call FIXPATH,mem/inst.hex)
-	iverilog $(IVERILOG_FLAGS) -o $(BUILD)/dump $(RTL_SRC) test/dump_tb.v
-	cd mem && vvp ../$(BUILD)/dump
+run: $(BUILD) $(MEM_DIR)/$(PROG).hex
+	$(CP) $(call FIXPATH,$(MEM_DIR)/$(PROG).hex) $(call FIXPATH,$(MEM_DIR)/inst.hex)
+	iverilog $(IVERILOG_FLAGS) -o $(BUILD)/dump $(RTL_SRC) $(TB_DIR)/dump_tb.v
+	cd $(MEM_DIR) && vvp ../../$(BUILD)/dump
 
-asm: mem/$(PROG).hex
-	@echo "assembled tests/$(PROG).s -> mem/$(PROG).hex"
+asm: $(MEM_DIR)/$(PROG).hex
+	@echo "assembled $(ASM_DIR)/$(PROG).s -> $(MEM_DIR)/$(PROG).hex"
 
 # --------------------------------------------------------------------------
-# Named test: `make test-fibonacci` runs tests/fibonacci.s against
-# test/fibonacci_tb.v with pass/fail checks. Add new tests by writing
-# tests/<name>.s plus test/<name>_tb.v; this rule handles the rest.
+# Named test: `make test-fibonacci` runs test/asm/fibonacci.s against
+# test/test_benches/fibonacci_tb.v with pass/fail checks. Add new tests by
+# writing test/asm/<name>.s plus test/test_benches/<name>_tb.v; this rule
+# handles the rest.
 # --------------------------------------------------------------------------
-test-%: $(BUILD) mem/%.hex test/%_tb.v
-	$(CP) $(call FIXPATH,mem/$*.hex) $(call FIXPATH,mem/inst.hex)
-	iverilog $(IVERILOG_FLAGS) -o $(BUILD)/$* $(RTL_SRC) test/$*_tb.v
-	cd mem && vvp ../$(BUILD)/$*
+test-%: $(BUILD) $(MEM_DIR)/%.hex $(TB_DIR)/%_tb.v
+	$(CP) $(call FIXPATH,$(MEM_DIR)/$*.hex) $(call FIXPATH,$(MEM_DIR)/inst.hex)
+	iverilog $(IVERILOG_FLAGS) -o $(BUILD)/$* $(RTL_SRC) $(TB_DIR)/$*_tb.v
+	cd $(MEM_DIR) && vvp ../../$(BUILD)/$*
 
 clean:
 	-$(RMRF) $(BUILD) $(NULL)
-	-$(RMFILE) $(call FIXPATH,mem/inst.hex) $(NULL)

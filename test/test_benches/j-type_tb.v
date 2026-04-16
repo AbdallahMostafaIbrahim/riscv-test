@@ -2,11 +2,7 @@
 *
 * Module: j-type_tb.v
 * Project: RISCV Processor
-* Description: Testbench for tests/j-type.s. Verifies JAL and JALR:
-*                  x1 = link address from JAL  (pc+4 = 0x04)
-*                  x2 = 2 (jal landed past the poison)
-*                  x3 = link address from JALR (pc+4 = 0x18)
-*                  x4 = 4 (jalr landed past the poison)
+* Description: Testbench for tests/j-type.s. 
 *
 **********************************************************************/
 `timescale 1ns / 1ps
@@ -62,11 +58,11 @@ module j_type_tb;
             $display("TIMEOUT after %0d cycles (PC = %08h)",
                      cycles, dut.pc_out);
 
-        check_reg(5'd1,  32'h00000004, "jal_link    ");
-        check_reg(5'd2,  32'h00000002, "jal_landed  ");
-        check_reg(5'd3,  32'h00000018, "jalr_link   ");
-        check_reg(5'd4,  32'h00000004, "jalr_landed ");
-        check_reg(5'd10, 32'h00000000, "poison_skip ");  // both poisons skipped
+        check_reg(5'd1,  32'h00000004, "jal_link");
+        check_reg(5'd2,  32'h00000002, "jal_landed");
+        check_reg(5'd3,  32'h00000018, "jalr_link");
+        check_reg(5'd4,  32'h00000004, "jalr_landed");
+        check_reg(5'd10, 32'h00000000, "skip "); 
 
         if (errors == 0)
             $display("==== j-type_tb: ALL TESTS PASSED (%0d cycles) ====",

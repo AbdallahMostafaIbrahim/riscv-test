@@ -3,18 +3,8 @@
 * Module: dump_tb.v
 * Project: RISCV Processor
 * Author: Arch Island
-* Description: Generic testbench for ad-hoc programs. Runs the core
-*              from reset until the halted flag rises (or a cycle
-*              cap expires), then prints the final PC and the full
-*              register file as a hex dump. No hard-coded expected
-*              values -- use this when you want to try a custom
-*              program and eyeball the result.
-*
-*              The instruction memory is loaded from "inst.hex" in
-*              the simulator's working directory (same convention as
-*              riscv_tb.v). The Makefile's `make run PROG=foo`
-*              target copies tests/foo.hex into mem/inst.hex before
-*              invoking the sim.
+* Description: Generic testbench for one-off programs 
+*              that dumps register file and memory
 *
 * Change history: 2026-04-15 - MS2: initial version.
 *
@@ -35,13 +25,6 @@ module dump_tb;
 
     initial clk = 1'b0;
     always #5 clk = ~clk;
-
-`ifdef DUMP_VCD
-    initial begin
-        $dumpfile("../build/dump.vcd");
-        $dumpvars(0, dump_tb);
-    end
-`endif
 
     initial begin
         rst    = 1'b1;

@@ -1,7 +1,5 @@
 # Project 1 RV32I RISC-V Processor (Milestone 2)
 
-CSCE 3301 Computer Architecture, Spring 2026.
-
 ## Team
 
 | Name                     | ID        |
@@ -30,13 +28,13 @@ every instruction at least once.
   writes.
 - **Self-checking testbenches** for each instruction type, all
   passing:
-  - `test/i-type_tb.v` — 9 checks
-  - `test/r-type_tb.v` — 10 checks
-  - `test/s-type_tb.v` — 3 checks (data memory contents)
-  - `test/load_tb.v` — 5 checks
-  - `test/b-type_tb.v` — 12 checks (6 taken + 6 poison-skip)
-  - `test/u-type_tb.v` — 2 checks
-  - `test/j-type_tb.v` — 5 checks (link + landing + poison-skip)
+  - `test/i-type_tb.v` (9 checks)
+  - `test/r-type_tb.v` (10 checks)
+  - `test/s-type_tb.v` (3 checks)
+  - `test/load_tb.v` (5 checks)
+  - `test/b-type_tb.v` (12 checks)
+  - `test/u-type_tb.v` (2 checks)
+  - `test/j-type_tb.v` (5 checks)
 
 ### What Doesn't Work / What's Deferred
 
@@ -61,30 +59,22 @@ every instruction at least once.
 
 The initial `control_unit.v` implemented all 37 RV32I instructions plus the 5 halting opcodes in a single enormous always block with a massive `case` statement. This makes the module harder to maintain, so we will probably split it into multiple modules in the next milestone.
 
-## How to Build and Run
-
-Everything is driven by the top-level `Makefile` using Icarus Verilog.
-
-```
-make                      # runs integ + isa regression
-make integ                # integration testbench on mem/default.hex
-make isa                  # per-case ISA table
-make test-i-type          # run tests/i-type.s vs test/i-type_tb.v
-make test-r-type          # ...
-make test-s-type
-make test-load
-make test-b-type
-make test-u-type
-make test-j-type
-make run PROG=<name>      # ad-hoc: assembles tests/<name>.s, dumps regs
-make asm PROG=<name>      # just assemble tests/<name>.s -> mem/<name>.hex
-make wave                 # integ run with VCD dump (build/dump.vcd)
-make clean
-```
+## How to Test
 
 Tests are written in RISC-V assembly (one file per instruction type)
 and self-check via the matching Verilog testbench that inspects the
 register file and data memory after `ebreak`.
+
+The `tests/` folder contains `asm/` (test assembly files), `mem/` (corresponding assembled hex files), `test_benches/` (self-checking test benches for each instruction type). In vivado,
+change the initial instruction memory by choosing one of the `*.mem` hex files and change in `verilog/memory/inst_mem.v` line 22:
+
+```verilog
+        $readmemh("*-type.hex", mem);
+```
+
+Then, choose the corresponding test bench as your top module.
+If you want to test a different hex file, change it in the `verilog/memory/inst_mem.v` and add
+the hex file to the project.
 
 ## Directory Layout
 
@@ -92,12 +82,12 @@ Mapped against the deliverable structure in the project description:
 
 ```
 .
-├── README.md               # this file (readme.txt)
-├── REPORT.md               # MS2 report (PDF report; markdown for now)
-├── journal/                # per-member activity logs
+├── README.md               # this file
+├── REPORT.pdf              # Milestone 2 Report
+├── journal/                # Journals
 │   ├── abdallah.md
 │   └── john.md
-├── rtl/                    # Verilog/
+├── verilog/                #   Verilog code
 │   ├── core/               #   defines.v, alu.v, control_unit.v,
 │   │                       #   branch_unit.v, immediate_gen.v,
 │   │                       #   reg_file.v, riscv.v
@@ -105,17 +95,11 @@ Mapped against the deliverable structure in the project description:
 │   │                       #   store_unit.v
 │   └── primitives/         #   flip_flop.v, full_adder.v, mux.v,
 │                           #   register.v, ripple.v
-├── test/                   # test/ (Verilog testbenches)
-│   ├── i-type_tb.v ... j-type_tb.v
-│   └── dump_tb.v           # ad-hoc register dump
-├── tests/                  # RISC-V assembly programs
-│   ├── i-type.s ... j-type.s
-│   ├── fibonacci.s
-│   └── default.s
-├── mem/                    # .hex images ($readmemh sources)
-├── tools/
-│   └── asm.py              # RV32I assembler (Python)
-├── project_description.md
-├── coding_guidelines.md
-└── Makefile
+└── test/                   #   Per-instruction tests
+    ├── asm/                #   Assembly sources: r-type.s, i-type.s,
+    │                       #   s-type.s, b-type.s, u-type.s,
+    │                       #   j-type.s, load.s
+    ├── mem/                #   what is used for $readmemh and data.hex
+    └── test_benches/       #   testbenches: <name>_tb.v and
+                            #   dump_tb.v
 ```

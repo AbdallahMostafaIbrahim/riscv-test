@@ -2,9 +2,7 @@
 *
 * Module: u-type_tb.v
 * Project: RISCV Processor
-* Description: Testbench for tests/u-type.s. Checks LUI and AUIPC.
-*              The AUIPC case sits at PC = 4 so its result is
-*              4 + (0x1 << 12) = 0x00001004.
+* Description: Testbench for tests/u-type.s. 
 *
 **********************************************************************/
 `timescale 1ns / 1ps
@@ -60,8 +58,8 @@ module u_type_tb;
             $display("TIMEOUT after %0d cycles (PC = %08h)",
                      cycles, dut.pc_out);
 
-        check_reg(5'd1, 32'hABCDE000, "lui         ");
-        check_reg(5'd2, 32'h00001004, "auipc       ");
+        check_reg(5'd1, 32'hABCDE000, "lui");
+        check_reg(5'd2, 32'h00001004, "auipc");
 
         if (errors == 0)
             $display("==== u-type_tb: ALL TESTS PASSED (%0d cycles) ====",

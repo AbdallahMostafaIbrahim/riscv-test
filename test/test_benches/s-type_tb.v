@@ -6,11 +6,6 @@
 *              different dmem word so we can verify them
 *              independently.
 *
-*              Expected:
-*                  dmem[0] = 0x00000008   (sw x20 = 8)
-*                  dmem[1] = 0x0000FFFF   (sh x21 low half -> 0xFFFF)
-*                  dmem[2] = 0x00000008   (sb x20 low byte -> 0x08)
-*
 **********************************************************************/
 `timescale 1ns / 1ps
 
@@ -66,9 +61,9 @@ module s_type_tb;
             $display("TIMEOUT after %0d cycles (PC = %08h)",
                      cycles, dut.pc_out);
 
-        check_word(0, 32'h00000008, "sw          ");
-        check_word(1, 32'h0000FFFF, "sh          ");
-        check_word(2, 32'h00000008, "sb          ");
+        check_word(0, 32'h00000008, "sw");
+        check_word(1, 32'h0000FFFF, "sh");
+        check_word(2, 32'h00000008, "sb");
 
         if (errors == 0)
             $display("==== s-type_tb: ALL TESTS PASSED (%0d cycles) ====",

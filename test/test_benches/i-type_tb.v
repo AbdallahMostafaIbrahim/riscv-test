@@ -59,15 +59,15 @@ module i_type_tb;
             $display("TIMEOUT after %0d cycles (PC = %08h)",
                      cycles, dut.pc_out);
 
-        check_reg(5'd1, 32'h00000008, "addi        ");
-        check_reg(5'd2, 32'h00000001, "slti        ");
-        check_reg(5'd3, 32'h00000000, "sltiu       ");
-        check_reg(5'd4, 32'h0000000A, "xori        ");
-        check_reg(5'd5, 32'h00000007, "ori         ");
-        check_reg(5'd6, 32'h00000001, "andi        ");
-        check_reg(5'd7, 32'h00000014, "slli        ");
-        check_reg(5'd8, 32'h00000002, "srli        ");
-        check_reg(5'd9, 32'hFFFFFFFC, "srai        ");
+        check_reg(5'd1, 32'h00000008, "addi");
+        check_reg(5'd2, 32'h00000001, "slti");
+        check_reg(5'd3, 32'h00000000, "sltiu");
+        check_reg(5'd4, 32'h0000000A, "xori");
+        check_reg(5'd5, 32'h00000007, "ori");
+        check_reg(5'd6, 32'h00000001, "andi");
+        check_reg(5'd7, 32'h00000014, "slli");
+        check_reg(5'd8, 32'h00000002, "srli");
+        check_reg(5'd9, 32'hFFFFFFFC, "srai");
 
         if (errors == 0)
             $display("==== i-type_tb: ALL TESTS PASSED (%0d cycles) ====",

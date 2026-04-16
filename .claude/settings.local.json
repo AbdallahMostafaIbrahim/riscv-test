@@ -16,7 +16,8 @@
       "Bash(python tools/asm.py tests/r-type.s /tmp/r-type-check.hex)",
       "Bash(make run:*)",
       "Bash(make test-j-type:*)",
-      "Bash(make test-b-type:*)"
+      "Bash(make test-b-type:*)",
+      "Bash(make test-r-type *)"
     ]
   }
 }

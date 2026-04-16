@@ -59,16 +59,16 @@ module r_type_tb;
             $display("TIMEOUT after %0d cycles (PC = %08h)",
                      cycles, dut.pc_out);
 
-        check_reg(5'd1,  32'h00000008, "add         ");
-        check_reg(5'd2,  32'h00000002, "sub         ");
-        check_reg(5'd3,  32'h00000028, "sll         ");
-        check_reg(5'd4,  32'h00000001, "slt         ");
-        check_reg(5'd5,  32'h00000000, "sltu        ");
-        check_reg(5'd6,  32'h00000006, "xor         ");
-        check_reg(5'd7,  32'h1FFFFFFF, "srl         ");
-        check_reg(5'd8,  32'hFFFFFFFF, "sra         ");
-        check_reg(5'd9,  32'h00000007, "or          ");
-        check_reg(5'd10, 32'h00000001, "and         ");
+        check_reg(5'd1,  32'h00000008, "add");
+        check_reg(5'd2,  32'h00000002, "sub");
+        check_reg(5'd3,  32'h00000028, "sll");
+        check_reg(5'd4,  32'h00000001, "slt");
+        check_reg(5'd5,  32'h00000000, "sltu");
+        check_reg(5'd6,  32'h00000006, "xor");
+        check_reg(5'd7,  32'h1FFFFFFF, "srl");
+        check_reg(5'd8,  32'hFFFFFFFF, "sra");
+        check_reg(5'd9,  32'h00000007, "or");
+        check_reg(5'd10, 32'h00000001, "and");
 
         if (errors == 0)
             $display("==== r-type_tb: ALL TESTS PASSED (%0d cycles) ====",

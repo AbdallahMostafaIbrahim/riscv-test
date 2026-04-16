@@ -59,11 +59,11 @@ module load_tb;
             $display("TIMEOUT after %0d cycles (PC = %08h)",
                      cycles, dut.pc_out);
 
-        check_reg(5'd1, 32'h87654321, "lw          ");
-        check_reg(5'd2, 32'h00000021, "lb          ");
-        check_reg(5'd3, 32'h00000087, "lbu         ");
-        check_reg(5'd4, 32'hFFFFFF80, "lh          ");
-        check_reg(5'd5, 32'h0000FF80, "lhu         ");
+        check_reg(5'd1, 32'h87654321, "lw");
+        check_reg(5'd2, 32'h00000021, "lb");
+        check_reg(5'd3, 32'h00000087, "lbu");
+        check_reg(5'd4, 32'hFFFFFF80, "lh");
+        check_reg(5'd5, 32'h0000FF80, "lhu");
 
         if (errors == 0)
             $display("==== load_tb: ALL TESTS PASSED (%0d cycles) ====",

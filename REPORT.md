@@ -4,10 +4,10 @@
 
 CSCE 3301 Computer Architecture, Spring 2026.
 
-| Team member               | ID        |
-| ------------------------- | --------- |
-| Abdallah Mostafa Ibrahim  | 900232544 |
-| John Saif                 | 900232149 |
+| Team member              | ID        |
+| ------------------------ | --------- |
+| Abdallah Mostafa Ibrahim | 900232544 |
+| John Saif                | 900232149 |
 
 ---
 
@@ -36,24 +36,24 @@ milestone.
 
 > ![Single-cycle datapath](screenshots/datapath.png)
 >
-> *Placeholder — schematic designed separately; drop the image
-> into `screenshots/datapath.png` and update the caption if needed.*
+> _Placeholder — schematic designed separately; drop the image
+> into `screenshots/datapath.png` and update the caption if needed._
 
 ### 2.2 Top-level organisation
 
 The core is instantiated from `rtl/core/riscv.v` and is built from
 six functional blocks plus two memories:
 
-| Block           | File                          | Role                                              |
-| --------------- | ----------------------------- | ------------------------------------------------- |
-| PC register     | `rtl/primitives/register.v`   | Holds current PC; load gated by `halted`          |
-| Instruction mem | `rtl/memory/inst_mem.v`       | 4 KiB, combinational read                         |
-| Control unit    | `rtl/core/control_unit.v`     | Flat opcode-driven decoder                        |
-| Register file   | `rtl/core/reg_file.v`         | 32 × 32 bits, `x0` hard-wired to zero             |
-| Immediate gen   | `rtl/core/immediate_gen.v`    | I/S/B/U/J formats                                 |
-| ALU             | `rtl/core/alu.v`              | 10 ops, 4-bit selector, Z/C/N/V flags             |
-| Branch unit     | `rtl/core/branch_unit.v`      | Consumes ALU flags, maps `funct3` -> `taken`      |
-| Data memory     | `rtl/memory/data_mem.v`       | 4 KiB with 4-bit byte-lane write mask             |
+| Block           | File                             | Role                                             |
+| --------------- | -------------------------------- | ------------------------------------------------ |
+| PC register     | `rtl/primitives/register.v`      | Holds current PC; load gated by `halted`         |
+| Instruction mem | `rtl/memory/inst_mem.v`          | 4 KiB, combinational read                        |
+| Control unit    | `rtl/core/control_unit.v`        | Flat opcode-driven decoder                       |
+| Register file   | `rtl/core/reg_file.v`            | 32 × 32 bits, `x0` hard-wired to zero            |
+| Immediate gen   | `rtl/core/immediate_gen.v`       | I/S/B/U/J formats                                |
+| ALU             | `rtl/core/alu.v`                 | 10 ops, 4-bit selector, Z/C/N/V flags            |
+| Branch unit     | `rtl/core/branch_unit.v`         | Consumes ALU flags, maps `funct3` -> `taken`     |
+| Data memory     | `rtl/memory/data_mem.v`          | 4 KiB with 4-bit byte-lane write mask            |
 | Store / Load    | `rtl/memory/{store,load}_unit.v` | Byte / half formatting and sign / zero extension |
 
 ### 2.3 Control-signal summary
@@ -61,38 +61,38 @@ six functional blocks plus two memories:
 All control signals are produced by `control_unit.v` from the
 5-bit opcode slice `inst[6:2]`:
 
-| Signal      | Width | Meaning                                         |
-| ----------- | ----- | ----------------------------------------------- |
+| Signal      | Width | Meaning                                            |
+| ----------- | ----- | -------------------------------------------------- |
 | `alu_sel`   | 4     | ALU op (see `defines.v`, `ALU_ADD` ... `ALU_SLTU`) |
-| `alu_src_a` | 2     | `00`=rs1, `01`=PC, `10`=0                       |
-| `alu_src_b` | 1     | `0`=rs2, `1`=imm                                |
-| `branch`    | 1     | Asserted on B-type; gates `branch_unit`         |
-| `jump`      | 1     | Asserted on JAL / JALR                          |
-| `jalr`      | 1     | Selects `rs1+imm` target over `PC+imm`          |
-| `mem_read`  | 1     | Asserted on loads                               |
-| `mem_write` | 1     | Asserted on stores                              |
-| `wb_src`    | 2     | `00`=ALU, `01`=mem, `10`=PC+4                   |
-| `reg_write` | 1     | Gates the register-file write                   |
-| `halt`      | 1     | Asserted on ECALL / EBREAK / FENCE* / PAUSE     |
+| `alu_src_a` | 2     | `00`=rs1, `01`=PC, `10`=0                          |
+| `alu_src_b` | 1     | `0`=rs2, `1`=imm                                   |
+| `branch`    | 1     | Asserted on B-type; gates `branch_unit`            |
+| `jump`      | 1     | Asserted on JAL / JALR                             |
+| `jalr`      | 1     | Selects `rs1+imm` target over `PC+imm`             |
+| `mem_read`  | 1     | Asserted on loads                                  |
+| `mem_write` | 1     | Asserted on stores                                 |
+| `wb_src`    | 2     | `00`=ALU, `01`=mem, `10`=PC+4                      |
+| `reg_write` | 1     | Gates the register-file write                      |
+| `halt`      | 1     | Asserted on ECALL / EBREAK / FENCE\* / PAUSE       |
 
 ### 2.4 ALU encoding
 
 The ALU uses a compact 4-bit selector defined in
 `rtl/core/defines.v`:
 
-| `alu_sel` | Op    |
-| --------- | ----- |
-| `0000`    | ADD   |
-| `0001`    | SUB   |
-| `0011`    | PASS  |
-| `0100`    | OR    |
-| `0101`    | AND   |
-| `0111`    | XOR   |
-| `1000`    | SRL   |
-| `1001`    | SLL   |
-| `1010`    | SRA   |
-| `1101`    | SLT   |
-| `1111`    | SLTU  |
+| `alu_sel` | Op   |
+| --------- | ---- |
+| `0000`    | ADD  |
+| `0001`    | SUB  |
+| `0011`    | PASS |
+| `0100`    | OR   |
+| `0101`    | AND  |
+| `0111`    | XOR  |
+| `1000`    | SRL  |
+| `1001`    | SLL  |
+| `1010`    | SRA  |
+| `1101`    | SLT  |
+| `1111`    | SLTU |
 
 Branches force `ALU_SUB` so the resulting Z/C/N/V flags feed
 `branch_unit` and avoid a duplicate comparator.
@@ -152,10 +152,10 @@ destination, or when `reg_write` is low.
 
 ### 4.1 Byte-addressable data memory
 
-*Problem.* RV32I specifies byte granularity but a simple 32-bit
+_Problem._ RV32I specifies byte granularity but a simple 32-bit
 word array would corrupt neighbouring bytes on `sb` / `sh`.
 
-*Solution.* `data_mem` still stores words but exposes a 4-bit
+_Solution._ `data_mem` still stores words but exposes a 4-bit
 `write_mask` that individually enables each byte lane. The
 `store_unit` derives the mask from `funct3` + `addr_low[1:0]`:
 `sb` uses a one-hot mask, `sh` uses `0011`/`1100` based on
@@ -164,19 +164,19 @@ enabled lane already contains the right bits.
 
 ### 4.2 Shared adder for branches
 
-*Problem.* Conditional branches need signed and unsigned
+_Problem._ Conditional branches need signed and unsigned
 comparisons, which normally require a dedicated comparator.
 
-*Solution.* Force `alu_sel = SUB` on every branch and let
+_Solution._ Force `alu_sel = SUB` on every branch and let
 `branch_unit` map the six branch `funct3` codes onto the Z / C /
 N / V flags. No extra comparator.
 
 ### 4.3 Hard-coded numeric values
 
-*Problem.* The coding guidelines disallow magic numbers; an early
+_Problem._ The coding guidelines disallow magic numbers; an early
 draft was full of literals like `7'b0110011`.
 
-*Solution.* All opcodes, funct3 codes, branch codes, ALU codes,
+_Solution._ All opcodes, funct3 codes, branch codes, ALU codes,
 instruction-field slices, etc. live in `rtl/core/defines.v` and are
 `` `include `` d by every consumer. Opcode comparisons use the
 5-bit slice `inst[6:2]` since the low two bits are `2'b11` for every
@@ -184,11 +184,11 @@ RV32I instruction.
 
 ### 4.4 Halting opcodes must stay halted
 
-*Problem.* ECALL / EBREAK / FENCE*/ PAUSE must end execution, but
+_Problem._ ECALL / EBREAK / FENCE\*/ PAUSE must end execution, but
 the combinational `halt` signal only persists while the halt
 instruction is being decoded.
 
-*Solution.* Because `pc_load = ~halted`, once `halt` is high the
+_Solution._ Because `pc_load = ~halted`, once `halt` is high the
 PC stops advancing, so the same halt instruction is re-fetched on
 every subsequent cycle — the decode is self-sustaining without a
 sticky flag.
@@ -215,17 +215,17 @@ regression.
 
 ### 5.2 Instruction coverage
 
-| Test bench         | Instructions covered                               | Checks |
-| ------------------ | -------------------------------------------------- | -----: |
-| `i-type_tb.v`      | `addi slti sltiu xori ori andi slli srli srai`     | 9      |
-| `r-type_tb.v`      | `add sub sll slt sltu xor srl sra or and`          | 10     |
-| `s-type_tb.v`      | `sb sh sw`                                         | 3      |
-| `load_tb.v`        | `lb lh lw lbu lhu`                                 | 5      |
-| `b-type_tb.v`      | `beq bne blt bge bltu bgeu` (+ poison-skip)        | 12     |
-| `u-type_tb.v`      | `lui auipc`                                        | 2      |
-| `j-type_tb.v`      | `jal jalr` (+ link address + poison-skip)          | 5      |
-| `isa_tb.v`         | Corner cases (neg imm, sign extension, etc.)       | 9      |
-| `fibonacci_tb.v`   | End-to-end loop program                            | 5      |
+| Test bench       | Instructions covered                           | Checks |
+| ---------------- | ---------------------------------------------- | -----: |
+| `i-type_tb.v`    | `addi slti sltiu xori ori andi slli srli srai` |      9 |
+| `r-type_tb.v`    | `add sub sll slt sltu xor srl sra or and`      |     10 |
+| `s-type_tb.v`    | `sb sh sw`                                     |      3 |
+| `load_tb.v`      | `lb lh lw lbu lhu`                             |      5 |
+| `b-type_tb.v`    | `beq bne blt bge bltu bgeu`                    |     12 |
+| `u-type_tb.v`    | `lui auipc`                                    |      2 |
+| `j-type_tb.v`    | `jal jalr`                                     |      5 |
+| `isa_tb.v`       | Corner cases (neg imm, sign extension, etc.)   |      9 |
+| `fibonacci_tb.v` | End-to-end loop program                        |      5 |
 
 Total: **60 independent checks**, all passing.
 
@@ -233,18 +233,18 @@ Total: **60 independent checks**, all passing.
 
 > ![Default coverage run](screenshots/wave_default.png)
 >
-> *Placeholder — `make wave` produces `build/dump.vcd`; open in
-> GTKWave and screenshot the signals of interest.*
+> _Placeholder — `make wave` produces `build/dump.vcd`; open in
+> GTKWave and screenshot the signals of interest._
 
 > ![Byte store / load (SB + LB)](screenshots/wave_sb_lb.png)
 >
-> *Placeholder — focus on `write_mask`, `wdata`, and `load_out`
-> for one byte store followed by a byte load.*
+> _Placeholder — focus on `write_mask`, `wdata`, and `load_out`
+> for one byte store followed by a byte load._
 
 > ![Branch taken path](screenshots/wave_branch.png)
 >
-> *Placeholder — show `branch`, `taken`, `pc_out`, `pc_plus_imm`
-> across a `beq` that is taken.*
+> _Placeholder — show `branch`, `taken`, `pc_out`, `pc_plus_imm`
+> across a `beq` that is taken._
 
 ### 5.4 Sample testbench output
 
