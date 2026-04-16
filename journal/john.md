@@ -2,7 +2,7 @@
 
 ### Register File
 
-- `rtl/core/reg_file.v`: 32 × 32 bits, `x0` hard-wired to zero,
+- `verilog/core/reg_file.v`: 32 × 32 bits, `x0` hard-wired to zero,
   synchronous write with async reset.
 
 ### Test infrastructure
@@ -15,10 +15,10 @@
 
 ### Execute path
 
-- `rtl/core/alu.v`: all 10 RV32I ops. SUB reuses the adder via
+- `verilog/core/alu.v`: all 10 RV32I ops. SUB reuses the adder via
   `~b + 1`. Exposes Z,C,N,V flags so the branch unit can
   evaluate from the subtraction.
-- `rtl/core/branch_unit.v`: maps the six branch `funct3` codes
+- `verilog/core/branch_unit.v`: maps the six branch `funct3` codes
   onto the ALU flags.
 
 ### Program counter and control transfer
