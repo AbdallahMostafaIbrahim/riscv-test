@@ -1,8 +1,6 @@
 # Project 1 — Milestone 2 Report
 
-**riscv32Project — Single-cycle RV32I core**
-
-CSCE 3301 Computer Architecture, Spring 2026.
+**Single-cycle RV32I Processor**
 
 | Team member              | ID        |
 | ------------------------ | --------- |
@@ -16,17 +14,10 @@ CSCE 3301 Computer Architecture, Spring 2026.
 This report documents Milestone 2 of Project 1: a single-cycle
 implementation of the RV32I base integer instruction set. The core
 supports all 37 user-level instructions and treats the five halting
-opcodes (`ecall`, `ebreak`, `fence`, `fence.tso`, `pause`) as
-program-end markers per the milestone requirements.
+opcodes (`ecall`, `ebreak`, `fence`, `fence.tso`, `pause`) as halting instructions.
 
-The processor is written in synthesisable Verilog following the
-course coding guidelines, and is verified via a suite of
-self-checking testbenches — one per RISC-V instruction format —
-along with two pre-existing end-to-end programs.
-
-Pipelining, single-ported memory, hazard handling and FPGA
-bring-up are scheduled for MS3 and are **not** present in this
-milestone.
+This processor is written in verilog and verified using self-checking test benches
+for each instruction type.
 
 ---
 
@@ -34,7 +25,7 @@ milestone.
 
 ### 2.1 Datapath block diagram
 
-> ![Single-cycle datapath](screenshots/datapath.png)
+> ![Single-cycle datapath](./schematic.png)
 >
 > _Placeholder — schematic designed separately; drop the image
 > into `screenshots/datapath.png` and update the caption if needed._
