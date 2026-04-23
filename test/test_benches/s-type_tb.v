@@ -30,10 +30,10 @@ module s_type_tb;
         input [31:0]     expected;
         input [12*8-1:0] name;
         begin
-            if (dut.dmem.mem[word_idx] !== expected) begin
+            if (dut.mem_unit.mem[word_idx] !== expected) begin
                 $display("FAIL %0s: dmem[%0d] expected %08h got %08h",
                          name, word_idx, expected,
-                         dut.dmem.mem[word_idx]);
+                         dut.mem_unit.mem[word_idx]);
                 errors = errors + 1;
             end
             else begin
@@ -61,9 +61,11 @@ module s_type_tb;
             $display("TIMEOUT after %0d cycles (PC = %08h)",
                      cycles, dut.pc_out);
 
-        check_word(0, 32'h00000008, "sw");
-        check_word(1, 32'h0000FFFF, "sh");
-        check_word(2, 32'h00000008, "sb");
+        // Data base is 0x400 => word 256. sw @ 0(x28), sh @ 4(x28),
+        // sb @ 8(x28) land at mem[256], mem[257], mem[258].
+        check_word(256, 32'h00000008, "sw");
+        check_word(257, 32'h0000FFFF, "sh");
+        check_word(258, 32'h00000008, "sb");
 
         if (errors == 0)
             $display("==== s-type_tb: ALL TESTS PASSED (%0d cycles) ====",

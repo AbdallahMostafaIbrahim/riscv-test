@@ -47,9 +47,12 @@ module dump_tb;
             $display("x%-2d = %08h", i, dut.rf.regs[i]);
         end
 
-        $display("------ data memory (first 8 words) ------");
+        // Data region starts at word 256 (0x400). Dump 8 words
+        // there so the testbench shows program-visible data, not
+        // the program itself.
+        $display("------ data memory (words 256..263, 0x400+) ------");
         for (i = 0; i < 8; i = i + 1) begin
-            $display("dmem[%0d] = %08h", i, dut.dmem.mem[i]);
+            $display("dmem[%0d] = %08h", 256+i, dut.mem_unit.mem[256+i]);
         end
 
         $finish;

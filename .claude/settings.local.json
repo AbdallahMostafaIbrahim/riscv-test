@@ -17,7 +17,13 @@
       "Bash(make run:*)",
       "Bash(make test-j-type:*)",
       "Bash(make test-b-type:*)",
-      "Bash(make test-r-type *)"
+      "Bash(make test-r-type *)",
+      "Bash(awk { if \\(length\\($0\\) > 80\\) print NR\": \"length\\($0\\)\" chars: \"$0 } *)",
+      "Bash(iverilog *)",
+      "Bash(awk '{ if \\(length\\($0\\) > 80\\) print NR\": \"length\\($0\\)\" chars\" }' /Users/abdallah/riscv/verilog/core/riscv.v)",
+      "Bash(awk '{ if \\(length\\($0\\) > 80\\) print NR\": \"length\\($0\\)\" chars\" }' /Users/abdallah/riscv/verilog/core/riscv.v /Users/abdallah/riscv/verilog/core/forwarding_unit.v)",
+      "Bash(awk '{ if \\(length\\($0\\) > 80\\) print NR\": \"length\\($0\\)\" chars \"FILENAME }' /Users/abdallah/riscv/verilog/core/riscv.v /Users/abdallah/riscv/verilog/core/hazard_unit.v)",
+      "Bash(awk '{ if \\(length\\($0\\) > 80\\) print NR\": \"length\\($0\\)\" chars \"FILENAME }' /Users/abdallah/riscv/verilog/core/riscv.v)"
     ]
   }
 }

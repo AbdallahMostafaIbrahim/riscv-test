@@ -4,8 +4,15 @@
 * Project: RISCV Processor
 * Author: Arch Island
 * Description: 32 x 32-bit RISC-V register file. x0 is hard-wired to zero.
-*              Writes are synchronous on the positive clock edge,
-*              while reads are combinational.
+*              Writes are synchronous on the NEGATIVE clock edge
+*              (mid-cycle), while reads are combinational. This
+*              half-cycle split lets the ID stage read a value
+*              written back by WB in the same cycle -- covers the
+*              3-instruction RAW case that pure EX/MEM and MEM/WB
+*              forwarding can't reach.
+*
+* Change history: 2026-04-23 - Moved write edge from posedge to
+*                              negedge to resolve 3-inst RAW.
 *
 **********************************************************************/
 `timescale 1ns / 1ps
@@ -25,7 +32,7 @@ module reg_file (
     reg [31:0] regs [0:31];
     integer    i;
 
-    always @(posedge clk or posedge rst) begin
+    always @(negedge clk or posedge rst) begin
         if (rst) begin
             for (i = 0; i < 32; i = i + 1)
                 regs[i] <= 32'b0;
