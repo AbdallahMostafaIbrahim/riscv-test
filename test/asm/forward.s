@@ -76,9 +76,4 @@ target:
 
 after_jal:
     addi  x12, x0,  42           # x12 = 42
-
-    # ---- Drain and halt ----
-    nop
-    nop
-    nop
     ebreak
