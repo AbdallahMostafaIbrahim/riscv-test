@@ -23,7 +23,12 @@
       "Bash(awk '{ if \\(length\\($0\\) > 80\\) print NR\": \"length\\($0\\)\" chars\" }' /Users/abdallah/riscv/verilog/core/riscv.v)",
       "Bash(awk '{ if \\(length\\($0\\) > 80\\) print NR\": \"length\\($0\\)\" chars\" }' /Users/abdallah/riscv/verilog/core/riscv.v /Users/abdallah/riscv/verilog/core/forwarding_unit.v)",
       "Bash(awk '{ if \\(length\\($0\\) > 80\\) print NR\": \"length\\($0\\)\" chars \"FILENAME }' /Users/abdallah/riscv/verilog/core/riscv.v /Users/abdallah/riscv/verilog/core/hazard_unit.v)",
-      "Bash(awk '{ if \\(length\\($0\\) > 80\\) print NR\": \"length\\($0\\)\" chars \"FILENAME }' /Users/abdallah/riscv/verilog/core/riscv.v)"
+      "Bash(awk '{ if \\(length\\($0\\) > 80\\) print NR\": \"length\\($0\\)\" chars \"FILENAME }' /Users/abdallah/riscv/verilog/core/riscv.v)",
+      "Bash(command -v iverilog)",
+      "Bash(make test-i-type *)",
+      "Bash(make test-s-type *)",
+      "Bash(make test-u-type *)",
+      "Bash(make test-load *)"
     ]
   }
 }

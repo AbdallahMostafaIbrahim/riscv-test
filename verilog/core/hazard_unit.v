@@ -3,38 +3,8 @@
 * Module: hazard_unit.v
 * Project: riscv32Project
 * Author: Arch Island
-* Description: Hazard detection for the 5-stage pipeline. Produces
-*              a single `stall` signal that covers two cases:
-*
-*              1) Load-use (data) hazard.
-*                 The instruction in EX is a load and the instruction
-*                 in ID reads that load's destination register.
-*                 Stall the dependent inst one cycle so the load's
-*                 result appears in MEM/WB and existing forwarding
-*                 can deliver it.
-*
-*              2) Single-port memory structural hazard.
-*                 The instruction in MEM is a load or store, so it
-*                 is using the unified inst/data memory port. IF
-*                 cannot fetch that cycle -- freeze fetch until MEM
-*                 is done.
-*
-*              Downstream effect of stall (top module wires this):
-*                - PC.load is gated off      -> PC holds.
-*                - IF/ID.load is gated off   -> dependent / stalled
-*                                               inst stays in ID.
-*                - ID/EX input is replaced by zeros -> NOP bubble
-*                                               flows into EX next
-*                                               cycle so the frozen
-*                                               inst doesn't execute
-*                                               twice.
-*
-*              x0 is excluded from the load-use check -- a load
-*              with rd = x0 writes nowhere, so no data hazard.
-*
-* Change history: 2026-04-23 - Initial load-use detection.
-*                 2026-04-23 - Added mem_stall for the single-port
-*                              memory structural hazard.
+* Description: Hazard detection produces a `stall` signal that covers both:
+*              Load-use data hazard and single-port memory structural hazard.
 *
 **********************************************************************/
 `timescale 1ns / 1ps

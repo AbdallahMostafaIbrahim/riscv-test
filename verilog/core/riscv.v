@@ -56,17 +56,17 @@ module riscv (
 
     wire [31:0] pc_next;
     wire        halted;
-    wire        halt_pending;
+    wire        halting;
     wire        pc_load;
     wire        stall;
     wire        flush;
 
-    // halt_pending: halt is anywhere in the pipe -> freeze fetch.
+    // halting: halt is anywhere in the pipe -> freeze fetch.
     // halted     : halt has reached WB -> program done (testbench
     //              signal); used by external tooling after all
     //              real instructions ahead of the halt have
     //              committed.
-    assign pc_load = ~halt_pending & (flush | ~stall);
+    assign pc_load = ~halting & (flush | ~stall);
 
     /* ================================================================
      * IF Stage
@@ -103,40 +103,30 @@ module riscv (
     /* ================================================================
      * IF/ID Pipeline Register
      *
-     * Packed layout (LSB first):
-     *   [31:0]   pc
-     *   [63:32]  pc_plus_4
-     *   [95:64]  inst
-     *
-     * load = ~halted : freezes when a halt is somewhere in the pipe
-     * so only the halt instruction keeps being seen by ID.
+     * load  = 0 freezes (load-use stall).
+     * flush overrides stall so a branch redirect always clears the
+     * wrong-path inst. halting freezes IF/ID so only the halt
+     * instruction keeps being seen by ID.
      * ================================================================ */
-    wire [95:0] if_id_d_fresh;
-    wire [95:0] if_id_d;
-    wire [95:0] if_id_q;
     wire        if_id_load;
-
     wire [31:0] if_id_pc;
     wire [31:0] if_id_pc_plus_4;
     wire [31:0] if_id_inst;
 
-    // Load = 0 freezes (load-use stall). Flush overrides the stall
-    // so a branch redirect can always clear the wrong-path inst.
-    assign if_id_load    = ~halt_pending & (flush | ~stall);
-    assign if_id_d_fresh = { inst_if, pc_plus_4_if, pc_if };
-    assign if_id_d       = flush ? 96'b0 : if_id_d_fresh;
+    assign if_id_load = ~halting & (flush | ~stall);
 
-    register #(.N(96)) if_id_reg (
-        .clk (clk),
-        .rst (rst),
-        .load(if_id_load),
-        .d   (if_id_d),
-        .q   (if_id_q)
+    if_id_reg if_id (
+        .clk         (clk),
+        .rst         (rst),
+        .load        (if_id_load),
+        .bubble      (flush),
+        .pc_in       (pc_if),
+        .pc_plus_4_in(pc_plus_4_if),
+        .inst_in     (inst_if),
+        .pc          (if_id_pc),
+        .pc_plus_4   (if_id_pc_plus_4),
+        .inst        (if_id_inst)
     );
-
-    assign if_id_pc        = if_id_q[31:0];
-    assign if_id_pc_plus_4 = if_id_q[63:32];
-    assign if_id_inst      = if_id_q[95:64];
 
     /* ================================================================
      * ID Stage
@@ -215,75 +205,17 @@ module riscv (
     /* ================================================================
      * ID/EX Pipeline Register
      *
-     * Packed layout (LSB first):
-     *   [31:0]    pc
-     *   [63:32]   pc_plus_4
-     *   [95:64]   rs1_data
-     *   [127:96]  rs2_data
-     *   [159:128] imm
-     *   [164:160] rd
-     *   [167:165] funct3
-     *   [171:168] alu_sel
-     *   [173:172] alu_src_a
-     *   [174]     alu_src_b
-     *   [175]     c_branch
-     *   [176]     c_jump
-     *   [177]     c_jalr
-     *   [178]     c_mem_read
-     *   [179]     c_mem_write
-     *   [181:180] wb_src
-     *   [182]     c_reg_write
-     *   [183]     halt
-     *   [188:184] rs1
-     *   [193:189] rs2
+     * bubble on stall (load-use) or flush (branch redirect): either
+     * one zeros the input so no wrong-path instruction enters EX.
      * ================================================================ */
-    wire [193:0] id_ex_d_fresh;
-    wire [193:0] id_ex_d;
-    wire [193:0] id_ex_q;
-
-    assign id_ex_d_fresh = {
-        rs2_id,
-        rs1_id,
-        halt_id,
-        c_reg_write_id,
-        wb_src_id,
-        c_mem_write_id,
-        c_mem_read_id,
-        c_jalr_id,
-        c_jump_id,
-        c_branch_id,
-        alu_src_b_id,
-        alu_src_a_id,
-        alu_sel_id,
-        funct3_id,
-        rd_id,
-        imm_id,
-        rs2_data_id,
-        rs1_data_id,
-        if_id_pc_plus_4,
-        if_id_pc
-    };
-
-    // Bubble ID/EX when either:
-    //   - stall : load-use stall keeps the dependent inst in ID.
-    //   - flush : branch resolved in MEM -> wrong-path inst in ID
-    //             must not be allowed into EX.
-    assign id_ex_d = (stall | flush) ? 194'b0 : id_ex_d_fresh;
-
-    register #(.N(194)) id_ex_reg (
-        .clk (clk),
-        .rst (rst),
-        .load(1'b1),
-        .d   (id_ex_d),
-        .q   (id_ex_q)
-    );
-
     wire [31:0] id_ex_pc;
     wire [31:0] id_ex_pc_plus_4;
     wire [31:0] id_ex_rs1_data;
     wire [31:0] id_ex_rs2_data;
     wire [31:0] id_ex_imm;
     wire [4:0]  id_ex_rd;
+    wire [4:0]  id_ex_rs1;
+    wire [4:0]  id_ex_rs2;
     wire [2:0]  id_ex_funct3;
     wire [3:0]  id_ex_alu_sel;
     wire [1:0]  id_ex_alu_src_a;
@@ -296,29 +228,54 @@ module riscv (
     wire [1:0]  id_ex_wb_src;
     wire        id_ex_c_reg_write;
     wire        id_ex_halt;
-    wire [4:0]  id_ex_rs1;
-    wire [4:0]  id_ex_rs2;
 
-    assign id_ex_pc          = id_ex_q[31:0];
-    assign id_ex_pc_plus_4   = id_ex_q[63:32];
-    assign id_ex_rs1_data    = id_ex_q[95:64];
-    assign id_ex_rs2_data    = id_ex_q[127:96];
-    assign id_ex_imm         = id_ex_q[159:128];
-    assign id_ex_rd          = id_ex_q[164:160];
-    assign id_ex_funct3      = id_ex_q[167:165];
-    assign id_ex_alu_sel     = id_ex_q[171:168];
-    assign id_ex_alu_src_a   = id_ex_q[173:172];
-    assign id_ex_alu_src_b   = id_ex_q[174];
-    assign id_ex_c_branch    = id_ex_q[175];
-    assign id_ex_c_jump      = id_ex_q[176];
-    assign id_ex_c_jalr      = id_ex_q[177];
-    assign id_ex_c_mem_read  = id_ex_q[178];
-    assign id_ex_c_mem_write = id_ex_q[179];
-    assign id_ex_wb_src      = id_ex_q[181:180];
-    assign id_ex_c_reg_write = id_ex_q[182];
-    assign id_ex_halt        = id_ex_q[183];
-    assign id_ex_rs1         = id_ex_q[188:184];
-    assign id_ex_rs2         = id_ex_q[193:189];
+    id_ex_reg id_ex (
+        .clk            (clk),
+        .rst            (rst),
+        .bubble         (stall | flush),
+
+        .pc_in          (if_id_pc),
+        .pc_plus_4_in   (if_id_pc_plus_4),
+        .rs1_data_in    (rs1_data_id),
+        .rs2_data_in    (rs2_data_id),
+        .imm_in         (imm_id),
+        .rd_in          (rd_id),
+        .rs1_in         (rs1_id),
+        .rs2_in         (rs2_id),
+        .funct3_in      (funct3_id),
+        .alu_sel_in     (alu_sel_id),
+        .alu_src_a_in   (alu_src_a_id),
+        .alu_src_b_in   (alu_src_b_id),
+        .c_branch_in    (c_branch_id),
+        .c_jump_in      (c_jump_id),
+        .c_jalr_in      (c_jalr_id),
+        .c_mem_read_in  (c_mem_read_id),
+        .c_mem_write_in (c_mem_write_id),
+        .wb_src_in      (wb_src_id),
+        .c_reg_write_in (c_reg_write_id),
+        .halt_in        (halt_id),
+
+        .pc             (id_ex_pc),
+        .pc_plus_4      (id_ex_pc_plus_4),
+        .rs1_data       (id_ex_rs1_data),
+        .rs2_data       (id_ex_rs2_data),
+        .imm            (id_ex_imm),
+        .rd             (id_ex_rd),
+        .rs1            (id_ex_rs1),
+        .rs2            (id_ex_rs2),
+        .funct3         (id_ex_funct3),
+        .alu_sel        (id_ex_alu_sel),
+        .alu_src_a      (id_ex_alu_src_a),
+        .alu_src_b      (id_ex_alu_src_b),
+        .c_branch       (id_ex_c_branch),
+        .c_jump         (id_ex_c_jump),
+        .c_jalr         (id_ex_c_jalr),
+        .c_mem_read     (id_ex_c_mem_read),
+        .c_mem_write    (id_ex_c_mem_write),
+        .wb_src         (id_ex_wb_src),
+        .c_reg_write    (id_ex_c_reg_write),
+        .halt           (id_ex_halt)
+    );
 
     /* ================================================================
      * EX Stage
@@ -410,68 +367,11 @@ module riscv (
     /* ================================================================
      * EX/MEM Pipeline Register
      *
-     * Carries the ALU result + the extra signals MEM needs to
-     * resolve the branch: ALU flags, pc+imm, and the branch/jump
-     * control bits.
-     *
-     * Packed layout (LSB first):
-     *   [31:0]    alu_out
-     *   [63:32]   rs2_data
-     *   [95:64]   pc_plus_4
-     *   [127:96]  pc_plus_imm
-     *   [132:128] rd
-     *   [135:133] funct3
-     *   [136]     c_mem_read
-     *   [137]     c_mem_write
-     *   [139:138] wb_src
-     *   [140]     c_reg_write
-     *   [141]     halt
-     *   [142]     c_branch
-     *   [143]     c_jump
-     *   [144]     c_jalr
-     *   [145]     flag_z
-     *   [146]     flag_c
-     *   [147]     flag_v
-     *   [148]     flag_n
+     * Carries the ALU result + everything MEM needs to resolve the
+     * branch: ALU flags, pc+imm, and branch/jump control bits.
+     * bubble on flush: the inst in EX was fetched from the wrong
+     * path and must not reach MEM (no dmem write, no reg writeback).
      * ================================================================ */
-    wire [148:0] ex_mem_d_fresh;
-    wire [148:0] ex_mem_d;
-    wire [148:0] ex_mem_q;
-
-    assign ex_mem_d_fresh = {
-        flag_n_ex,
-        flag_v_ex,
-        flag_c_ex,
-        flag_z_ex,
-        id_ex_c_jalr,
-        id_ex_c_jump,
-        id_ex_c_branch,
-        id_ex_halt,
-        id_ex_c_reg_write,
-        id_ex_wb_src,
-        id_ex_c_mem_write,
-        id_ex_c_mem_read,
-        id_ex_funct3,
-        id_ex_rd,
-        pc_plus_imm_ex,
-        id_ex_pc_plus_4,
-        rs2_fwd_ex,
-        alu_out_ex
-    };
-
-    // Bubble EX/MEM on flush: the inst in EX was fetched from the
-    // wrong path and must not reach MEM (it would cause dmem writes
-    // or reg writebacks that the taken branch was supposed to skip).
-    assign ex_mem_d = flush ? 149'b0 : ex_mem_d_fresh;
-
-    register #(.N(149)) ex_mem_reg (
-        .clk (clk),
-        .rst (rst),
-        .load(1'b1),
-        .d   (ex_mem_d),
-        .q   (ex_mem_q)
-    );
-
     wire [31:0] ex_mem_alu_out;
     wire [31:0] ex_mem_rs2_data;
     wire [31:0] ex_mem_pc_plus_4;
@@ -491,24 +391,49 @@ module riscv (
     wire        ex_mem_flag_v;
     wire        ex_mem_flag_n;
 
-    assign ex_mem_alu_out     = ex_mem_q[31:0];
-    assign ex_mem_rs2_data    = ex_mem_q[63:32];
-    assign ex_mem_pc_plus_4   = ex_mem_q[95:64];
-    assign ex_mem_pc_plus_imm = ex_mem_q[127:96];
-    assign ex_mem_rd          = ex_mem_q[132:128];
-    assign ex_mem_funct3      = ex_mem_q[135:133];
-    assign ex_mem_c_mem_read  = ex_mem_q[136];
-    assign ex_mem_c_mem_write = ex_mem_q[137];
-    assign ex_mem_wb_src      = ex_mem_q[139:138];
-    assign ex_mem_c_reg_write = ex_mem_q[140];
-    assign ex_mem_halt        = ex_mem_q[141];
-    assign ex_mem_c_branch    = ex_mem_q[142];
-    assign ex_mem_c_jump      = ex_mem_q[143];
-    assign ex_mem_c_jalr      = ex_mem_q[144];
-    assign ex_mem_flag_z      = ex_mem_q[145];
-    assign ex_mem_flag_c      = ex_mem_q[146];
-    assign ex_mem_flag_v      = ex_mem_q[147];
-    assign ex_mem_flag_n      = ex_mem_q[148];
+    ex_mem_reg ex_mem (
+        .clk            (clk),
+        .rst            (rst),
+        .bubble         (flush),
+
+        .alu_out_in     (alu_out_ex),
+        .rs2_data_in    (rs2_fwd_ex),
+        .pc_plus_4_in   (id_ex_pc_plus_4),
+        .pc_plus_imm_in (pc_plus_imm_ex),
+        .rd_in          (id_ex_rd),
+        .funct3_in      (id_ex_funct3),
+        .c_mem_read_in  (id_ex_c_mem_read),
+        .c_mem_write_in (id_ex_c_mem_write),
+        .wb_src_in      (id_ex_wb_src),
+        .c_reg_write_in (id_ex_c_reg_write),
+        .halt_in        (id_ex_halt),
+        .c_branch_in    (id_ex_c_branch),
+        .c_jump_in      (id_ex_c_jump),
+        .c_jalr_in      (id_ex_c_jalr),
+        .flag_z_in      (flag_z_ex),
+        .flag_c_in      (flag_c_ex),
+        .flag_v_in      (flag_v_ex),
+        .flag_n_in      (flag_n_ex),
+
+        .alu_out        (ex_mem_alu_out),
+        .rs2_data       (ex_mem_rs2_data),
+        .pc_plus_4      (ex_mem_pc_plus_4),
+        .pc_plus_imm    (ex_mem_pc_plus_imm),
+        .rd             (ex_mem_rd),
+        .funct3         (ex_mem_funct3),
+        .c_mem_read     (ex_mem_c_mem_read),
+        .c_mem_write    (ex_mem_c_mem_write),
+        .wb_src         (ex_mem_wb_src),
+        .c_reg_write    (ex_mem_c_reg_write),
+        .halt           (ex_mem_halt),
+        .c_branch       (ex_mem_c_branch),
+        .c_jump         (ex_mem_c_jump),
+        .c_jalr         (ex_mem_c_jalr),
+        .flag_z         (ex_mem_flag_z),
+        .flag_c         (ex_mem_flag_c),
+        .flag_v         (ex_mem_flag_v),
+        .flag_n         (ex_mem_flag_n)
+    );
 
     /* ================================================================
      * MEM Stage
@@ -592,37 +517,7 @@ module riscv (
 
     /* ================================================================
      * MEM/WB Pipeline Register
-     *
-     * Packed layout (LSB first):
-     *   [31:0]    alu_out
-     *   [63:32]   load_out
-     *   [95:64]   pc_plus_4
-     *   [100:96]  rd
-     *   [102:101] wb_src
-     *   [103]     c_reg_write
-     *   [104]     halt
      * ================================================================ */
-    wire [104:0] mem_wb_d;
-    wire [104:0] mem_wb_q;
-
-    assign mem_wb_d = {
-        ex_mem_halt,
-        ex_mem_c_reg_write,
-        ex_mem_wb_src,
-        ex_mem_rd,
-        ex_mem_pc_plus_4,
-        load_out_mem,
-        ex_mem_alu_out
-    };
-
-    register #(.N(105)) mem_wb_reg (
-        .clk (clk),
-        .rst (rst),
-        .load(1'b1),
-        .d   (mem_wb_d),
-        .q   (mem_wb_q)
-    );
-
     wire [31:0] mem_wb_alu_out;
     wire [31:0] mem_wb_load_out;
     wire [31:0] mem_wb_pc_plus_4;
@@ -631,13 +526,26 @@ module riscv (
     wire        mem_wb_c_reg_write;
     wire        mem_wb_halt;
 
-    assign mem_wb_alu_out     = mem_wb_q[31:0];
-    assign mem_wb_load_out    = mem_wb_q[63:32];
-    assign mem_wb_pc_plus_4   = mem_wb_q[95:64];
-    assign mem_wb_rd          = mem_wb_q[100:96];
-    assign mem_wb_wb_src      = mem_wb_q[102:101];
-    assign mem_wb_c_reg_write = mem_wb_q[103];
-    assign mem_wb_halt        = mem_wb_q[104];
+    mem_wb_reg mem_wb (
+        .clk            (clk),
+        .rst            (rst),
+
+        .alu_out_in     (ex_mem_alu_out),
+        .load_out_in    (load_out_mem),
+        .pc_plus_4_in   (ex_mem_pc_plus_4),
+        .rd_in          (ex_mem_rd),
+        .wb_src_in      (ex_mem_wb_src),
+        .c_reg_write_in (ex_mem_c_reg_write),
+        .halt_in        (ex_mem_halt),
+
+        .alu_out        (mem_wb_alu_out),
+        .load_out       (mem_wb_load_out),
+        .pc_plus_4      (mem_wb_pc_plus_4),
+        .rd             (mem_wb_rd),
+        .wb_src         (mem_wb_wb_src),
+        .c_reg_write    (mem_wb_c_reg_write),
+        .halt           (mem_wb_halt)
+    );
 
     /* ================================================================
      * WB Stage
@@ -660,7 +568,7 @@ module riscv (
     /* ================================================================
      * Halt propagation
      *
-     * halt_pending: any halt in the pipe. Freezes PC + IF/ID so no
+     * halting: any halt in the pipe. Freezes PC + IF/ID so no
      *   garbage is fetched past the halt while earlier instructions
      *   drain through MEM and WB.
      *
@@ -668,7 +576,7 @@ module riscv (
      *   -- every instruction that was ahead of it in program order
      *   has already committed by this point.
      * ================================================================ */
-    assign halt_pending = halt_id
+    assign halting = halt_id
                         | id_ex_halt
                         | ex_mem_halt
                         | mem_wb_halt;
@@ -682,7 +590,7 @@ module riscv (
      * EX must be squashed. The flush signal bubbles IF/ID, ID/EX,
      * and EX/MEM so they can't cause writebacks or dmem writes.
      * ================================================================ */
-    assign flush = pc_rel_taken_mem | ex_mem_c_jalr;
+    assign flush = branch_taken_mem | ex_mem_c_jump | ex_mem_c_jalr;
 
     /* ================================================================
      * Next PC Logic
