@@ -2,9 +2,10 @@
 *
 * Module: branch_unit.v
 * Project: RISCV Processor
-* Description: Conditional-branch evaluator. Uses the ALU flags from
-*              rs1 - rs2 and the branch funct3 to decide if the
-*              branch is taken.
+* Author: Arch Island
+* Description: Conditional-branch evaluator. Uses the alu_out from
+*              the ALU (rs1 - rs2) and the branch funct3 to 
+*              determine if a branch is taken.
 *
 **********************************************************************/
 `timescale 1ns / 1ps

@@ -2,6 +2,7 @@
 *
 * Module: alu.v
 * Project: RISCV Processor
+* Author: Arch Island
 * Description: ALU with 4-bit selector
 *
 **********************************************************************/

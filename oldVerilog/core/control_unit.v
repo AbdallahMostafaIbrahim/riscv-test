@@ -2,9 +2,24 @@
 *
 * Module: control_unit.v
 * Project: RISCV Processor
-* Description: Decodes a 32-bit instruction into datapath controls.
-*              Covers RV32I plus the halting opcodes (ECALL, EBREAK,
+* Author: Arch Island
+* Description: Decodes the 32-bit instruction and outputs the 
+*              control signals for the datapath. Covers all 37 implemented
+*              RV32I instructions plus the halting opcodes (ECALL, EBREAK,
 *              FENCE, FENCE.TSO, PAUSE).
+*
+*              Control signals:
+*              alu_sel:   4-bit ALU operation selector (details in alu.v and defines.v)
+*              alu_src_a: 2'b00 = rs1, 2'b01 = pc, 2'b10 = 32'b0
+*              alu_src_b: 1'b0  = rs2, 1'b1  = imm
+*              branch:    1 for conditional branches (drives branch_unit)
+*              jump:      1 for JAL / JALR
+*              jalr:      1 for JALR only
+*              mem_read:  1 for loads    
+*              mem_write: 1 for stores   (enables write_mask in data_mem)
+*              wb_src:    2'b00 = alu, 2'b01 = mem, 2'b10 = pc+4
+*              reg_write: 1 when rd should be written on the next clk edge
+*              halt:      1 for ECALL / EBREAK / FENCE / FENCE.TSO / PAUSE (freezes PC and stops reg / mem writes)
 *
 **********************************************************************/
 `timescale 1ns / 1ps
@@ -13,16 +28,16 @@
 module control_unit (
     input      [31:0] inst,
     output reg [3:0]  alu_sel,
-    output reg [1:0]  alu_src_a,   // 00=rs1, 01=pc, 10=zero
-    output reg        alu_src_b,   // 0=rs2, 1=imm
+    output reg [1:0]  alu_src_a,
+    output reg        alu_src_b,
     output reg        branch,
     output reg        jump,
     output reg        jalr,
     output reg        mem_read,
     output reg        mem_write,
-    output reg [1:0]  wb_src,      // 00=alu, 01=mem, 10=pc+4
+    output reg [1:0]  wb_src,
     output reg        reg_write,
-    output reg        halt         // ECALL/EBREAK/FENCE family; freezes PC
+    output reg        halt
 );
 
     wire [4:0] opcode;
@@ -34,6 +49,7 @@ module control_unit (
     assign inst30 = inst[30];
 
     always @(*) begin
+        // Safe defaults - act like a no-op that writes nowhere.
         alu_sel   = `ALU_ADD;
         alu_src_a = 2'b00;
         alu_src_b = 1'b0;
@@ -46,11 +62,8 @@ module control_unit (
         reg_write = 1'b0;
         halt      = 1'b0;
 
-        // 32'b0 is the pipeline NOP sentinel; opcode 0 would otherwise decode as LOAD.
-        if (inst == 32'b0) begin
-        end
-        else case (opcode)
-            // R-type
+        case (opcode)
+            // ---------------- R-type -----------------------------
             `OPCODE_Arith_R: begin
                 case ({inst30, funct3})
                     {1'b0, `F3_ADD}:  alu_sel = `ALU_ADD;
@@ -71,7 +84,8 @@ module control_unit (
                 reg_write = 1'b1;
             end
 
-            // I-ALU. SLLI/SRLI/SRAI use inst30 to pick SRL vs SRA.
+            // ---------------- I-ALU ------------------------------
+            // SLLI / SRLI / SRAI take inst30 to pick SRL vs SRA.
             `OPCODE_Arith_I: begin
                 case (funct3)
                     `F3_ADD:  alu_sel = `ALU_ADD;
@@ -90,9 +104,9 @@ module control_unit (
                 reg_write = 1'b1;
             end
 
-            // Loads
+            // ---------------- Loads ------------------------------
             `OPCODE_Load: begin
-                alu_sel   = `ALU_ADD;
+                alu_sel   = `ALU_ADD;        // rs1 + imm
                 alu_src_a = 2'b00;
                 alu_src_b = 1'b1;
                 mem_read  = 1'b1;
@@ -100,43 +114,46 @@ module control_unit (
                 reg_write = 1'b1;
             end
 
-            // Stores
+            // ---------------- Stores -----------------------------
             `OPCODE_Store: begin
-                alu_sel   = `ALU_ADD;
+                alu_sel   = `ALU_ADD;        // rs1 + imm
                 alu_src_a = 2'b00;
                 alu_src_b = 1'b1;
                 mem_write = 1'b1;
                 reg_write = 1'b0;
             end
 
-            // Branches: rs1 - rs2, flags go to branch_unit
+            // ---------------- Branches ---------------------------
             `OPCODE_Branch: begin
-                alu_sel   = `ALU_SUB;
+                alu_sel   = `ALU_SUB;        // rs1 - rs2, flags to branch_unit
                 alu_src_a = 2'b00;
                 alu_src_b = 1'b0;
                 branch    = 1'b1;
                 reg_write = 1'b0;
             end
 
-            // LUI: rd = 0 + imm (U-type has low 12 bits zero)
+            // ---------------- LUI --------------------------------
+            // rd = 0 + imm (U-type already has low 12 bits zero).
             `OPCODE_LUI: begin
                 alu_sel   = `ALU_ADD;
-                alu_src_a = 2'b10;
-                alu_src_b = 1'b1;
+                alu_src_a = 2'b10;           // zero
+                alu_src_b = 1'b1;            // imm
                 wb_src    = 2'b00;
                 reg_write = 1'b1;
             end
 
-            // AUIPC: rd = pc + imm
+            // ---------------- AUIPC ------------------------------
+            // rd = pc + imm
             `OPCODE_AUIPC: begin
                 alu_sel   = `ALU_ADD;
-                alu_src_a = 2'b01;
-                alu_src_b = 1'b1;
+                alu_src_a = 2'b01;           // pc
+                alu_src_b = 1'b1;            // imm
                 wb_src    = 2'b00;
                 reg_write = 1'b1;
             end
 
-            // JAL: pc_next = pc + imm_J; rd = pc + 4
+            // ---------------- JAL --------------------------------
+            // pc_next = pc + imm_J ; rd = pc + 4
             `OPCODE_JAL: begin
                 alu_sel   = `ALU_ADD;
                 alu_src_a = 2'b00;
@@ -147,7 +164,8 @@ module control_unit (
                 reg_write = 1'b1;
             end
 
-            // JALR: pc_next = (rs1 + imm) & ~1; rd = pc + 4
+            // ---------------- JALR -------------------------------
+            // pc_next = (rs1 + imm) & ~1 ; rd = pc + 4
             `OPCODE_JALR: begin
                 alu_sel   = `ALU_ADD;
                 alu_src_a = 2'b00;
@@ -158,9 +176,11 @@ module control_unit (
                 reg_write = 1'b1;
             end
 
-            // SYSTEM (ECALL, EBREAK) and MISC-MEM (FENCE family) both halt.
+            // ---------------- Halting opcodes --------------------
+            // SYSTEM (ECALL, EBREAK) and MISC-MEM (FENCE, FENCE.TSO,
+            // PAUSE) both freeze the PC via the halt flag.
             `OPCODE_SYSTEM,
-            5'b00_011: begin
+            5'b00_011: begin                 // MISC-MEM (FENCE family)
                 halt = 1'b1;
             end
 

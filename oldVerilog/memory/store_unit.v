@@ -2,11 +2,22 @@
 *
 * Module: store_unit.v
 * Project: RISCV Processor
-* Description: Formats rs2_data into a lane-aligned 32-bit wdata and
-*              a 4-bit per-byte write_mask for memory. write_mask is
-*              forced to zero when mem_write is low.
+* Author: Arch Island
+* Description: Combinational store formatter. Converts the store
+*              instruction's funct3, the low two bits of the byte
+*              address, and rs2_data into a 32-bit `wdata` lined up
+*              for the correct byte lane plus a 4-bit per-byte
+*              `write_mask` for data_mem.
 *
-*              funct3:  000=SB, 001=SH, 010=SW
+*              When mem_write is low the output write_mask is forced to
+*              all zeros so no lane is written.
+*
+*              funct3:
+*                  000 - SB   one byte  at addr_low
+*                  001 - SH   halfword  at addr[1]
+*                  010 - SW   full word (addr_low ignored)
+*
+* Change history: 2026-04-14 - MS2: initial version.
 *
 **********************************************************************/
 `timescale 1ns / 1ps

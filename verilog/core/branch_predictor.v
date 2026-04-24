@@ -2,38 +2,12 @@
 *
 * Module: branch_predictor.v
 * Project: riscv32Project
-* Author: Arch Island
-* Description: Classical IF-stage branch predictor for conditional
-*              branches only (BEQ/BNE/BLT/BGE/BLTU/BGEU). JAL and
-*              JALR are not predicted here -- they keep the 3-cycle
-*              flush they had before.
-*
-*              Structure: separate BHT and BTB, both direct-mapped
-*              with 64 entries, both indexed by PC[7:2].
-*
-*              BHT: 64 x 2-bit saturating counters. Tagless. On
-*              reset each counter is 2'b01 (weakly not-taken).
-*              Predicts taken iff the MSB of the counter is 1.
-*
-*              BTB: 64 entries, each {valid, tag, target} with
-*              tag = PC[31:8] and target = branch's pc + imm.
-*              Tagged to avoid redirecting to a stale / aliased
-*              target. valid is cleared on reset; tag and target
-*              are also cleared for sim cleanliness. BTB entries
-*              are allocated/overwritten only on TAKEN resolutions;
-*              not-taken resolutions leave the BTB alone and rely
-*              on the BHT counter drifting toward not-taken.
-*
-*              Combining rule: predict_taken = BHT[idx][1] &
-*              BTB[idx].valid & (BTB[idx].tag == PC[31:8]).
-*              A BTB miss forces predict_taken = 0 (predict NT)
-*              because we have no target to redirect to.
-*
-*              Same-cycle read/write collisions (an IF lookup and
-*              a MEM update to the same index on the same cycle)
-*              return the pre-update value -- no bypass. The
-*              predictor is probabilistic state; one cycle of
-*              staleness is harmless.
+* Description: IF-stage predictor for conditional branches only
+*              (JAL/JALR remain unpredicted). Direct-mapped 64-entry
+*              BHT (2-bit saturating counters, reset to weakly-NT)
+*              and BTB ({valid, tag, target}), both indexed by
+*              PC[7:2]. Predict taken iff BHT MSB is 1 and BTB hits.
+*              BTB entries are allocated only on taken resolutions.
 *
 **********************************************************************/
 `timescale 1ns / 1ps
@@ -42,12 +16,12 @@ module branch_predictor (
     input         clk,
     input         rst,
 
-    // IF-stage lookup (combinational read)
+    // IF-stage lookup (combinational)
     input  [31:0] pc_if,
     output        predict_taken,
     output [31:0] predict_target,
 
-    // MEM-stage update (synchronous write)
+    // MEM-stage update (synchronous)
     input         update_valid,
     input  [31:0] update_pc,
     input         update_taken,
@@ -58,18 +32,12 @@ module branch_predictor (
     localparam TAG_W = 24;   // PC[31:8]
     localparam N_ENT = 1 << IDX_W;
 
-    /* ================================================================
-     * Storage
-     * ================================================================ */
     reg [1:0]        bht       [0:N_ENT-1];
-
     reg              btb_valid [0:N_ENT-1];
     reg [TAG_W-1:0]  btb_tag   [0:N_ENT-1];
     reg [31:0]       btb_target[0:N_ENT-1];
 
-    /* ================================================================
-     * Lookup side (IF)
-     * ================================================================ */
+    // Lookup (IF)
     wire [IDX_W-1:0] read_idx;
     wire [TAG_W-1:0] read_tag;
 
@@ -77,15 +45,12 @@ module branch_predictor (
     assign read_tag = pc_if[31:IDX_W+2];
 
     wire btb_hit;
-    assign btb_hit = btb_valid[read_idx]
-                   & (btb_tag[read_idx] == read_tag);
+    assign btb_hit = btb_valid[read_idx] & (btb_tag[read_idx] == read_tag);
 
     assign predict_taken  = bht[read_idx][1] & btb_hit;
     assign predict_target = btb_target[read_idx];
 
-    /* ================================================================
-     * Update side (MEM)
-     * ================================================================ */
+    // Update (MEM)
     wire [IDX_W-1:0] write_idx;
     wire [TAG_W-1:0] write_tag;
 
@@ -104,7 +69,7 @@ module branch_predictor (
             end
         end
         else if (update_valid) begin
-            // BHT: explicit 2-bit saturating counter transitions
+            // 2-bit saturating counter
             case (bht[write_idx])
                 2'b00: bht[write_idx] <= update_taken ? 2'b01 : 2'b00;
                 2'b01: bht[write_idx] <= update_taken ? 2'b10 : 2'b00;
@@ -112,7 +77,7 @@ module branch_predictor (
                 2'b11: bht[write_idx] <= update_taken ? 2'b11 : 2'b10;
             endcase
 
-            // BTB: allocate / overwrite only on taken
+            // Allocate BTB only on taken
             if (update_taken) begin
                 btb_valid[write_idx]  <= 1'b1;
                 btb_tag[write_idx]    <= write_tag;

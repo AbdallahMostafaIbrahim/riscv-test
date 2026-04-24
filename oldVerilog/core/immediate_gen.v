@@ -2,9 +2,12 @@
 *
 * Module: immediate_gen.v
 * Project: RISCV Processor
-* Description: Immediate generator for all RV32I formats. B and J
-*              immediates already include their left shift, so the
-*              output drops straight into the ALU or PC adder.
+* Author: Arch Island
+* Description: Immediate generator covering all formats.
+*              Output is a 32-bit immediate ready to drop into 
+*              the ALU or PC adder since B and J immediates
+*              already include left shifts, so no extra shift
+*              module is needed.
 *
 **********************************************************************/
 `timescale 1ns / 1ps

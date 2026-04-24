@@ -9,6 +9,7 @@
 RTL_SRC := $(filter-out verilog/core/defines.v, \
              $(wildcard verilog/primitives/*.v) \
              $(wildcard verilog/core/*.v) \
+             $(wildcard verilog/core/stages/*.v) \
              $(wildcard verilog/memory/*.v))
 
 IVERILOG_FLAGS := -g2012 -I verilog/core

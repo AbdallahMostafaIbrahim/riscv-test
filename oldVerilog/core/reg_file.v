@@ -2,10 +2,10 @@
 *
 * Module: reg_file.v
 * Project: RISCV Processor
-* Description: 32 x 32-bit register file. x0 is hard-wired to zero.
-*              Reads combinational; writes on negedge so an ID-stage
-*              read sees a same-cycle WB (covers the 3-inst RAW case
-*              forwarding can't reach).
+* Author: Arch Island
+* Description: 32 x 32-bit RISC-V register file. x0 is hard-wired to zero.
+*              Writes are synchronous on the positive clock edge,
+*              while reads are combinational.
 *
 **********************************************************************/
 `timescale 1ns / 1ps
@@ -25,7 +25,7 @@ module reg_file (
     reg [31:0] regs [0:31];
     integer    i;
 
-    always @(negedge clk or posedge rst) begin
+    always @(posedge clk or posedge rst) begin
         if (rst) begin
             for (i = 0; i < 32; i = i + 1)
                 regs[i] <= 32'b0;

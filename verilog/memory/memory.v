@@ -2,27 +2,10 @@
 *
 * Module: memory.v
 * Project: RISCV Processor
-* Author: Arch Island
-* Description: Unified, single-port, byte-addressable memory. Holds
-*              both instructions and data in the same array. 4 KiB,
-*              organised as 1024 32-bit words. Reads are
-*              combinational; writes are synchronous on the positive
-*              clock edge, gated per byte by a 4-bit write_mask.
-*
-*              The port is shared between IF (fetch) and MEM (load /
-*              store). Only one consumer uses the port each cycle.
-*              The hazard_unit asserts mem_stall whenever the MEM
-*              stage needs the port, freezing IF until MEM is done,
-*              so the two consumers never collide at this module's
-*              interface.
-*
-*              Initial contents load from inst.hex. Test programs
-*              should keep their data above some safe offset (e.g.
-*              0x400) so stores don't overwrite code.
-*
-* Change history: 2026-04-23 - Initial version. Replaces separate
-*                              inst_mem.v and data_mem.v for MS3's
-*                              single-port requirement.
+* Description: Unified single-port byte-addressable memory, 4 KiB
+*              (1024 x 32-bit). Holds both instructions and data.
+*              Reads combinational; writes synchronous, per-byte
+*              gated by write_mask. Initial image from inst.hex.
 *
 **********************************************************************/
 `timescale 1ns / 1ps
@@ -38,9 +21,8 @@ module memory (
     reg     [31:0] mem [0:1023];
     integer        i;
 
-    // Zero the data region first so partial-word stores (sh, sb)
-    // leave predictable bytes in untouched lanes. Then overlay the
-    // program image from inst.hex.
+    // Zero the array first so partial-word stores leave predictable
+    // bytes in untouched lanes; then overlay the program image.
     initial begin
         for (i = 0; i < 1024; i = i + 1)
             mem[i] = 32'b0;

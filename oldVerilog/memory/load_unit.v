@@ -2,10 +2,20 @@
 *
 * Module: load_unit.v
 * Project: RISCV Processor
-* Description: Extracts the byte/halfword at addr_low from the 32-bit
-*              memory word and sign- or zero-extends per funct3.
+* Author: Arch Island
+* Description: Formats the memory read data based on load type. 
+               Extracts the byte or halfword selected by addr[1:0] from the 32-bit word
+*              returned by data_mem and performs the requested
+*              sign- or zero-extension.
 *
-*              funct3:  000=LB, 001=LH, 010=LW, 100=LBU, 101=LHU
+*              funct3:
+*                  000 - LB    byte at addr_low,   sign-extended
+*                  001 - LH    half at addr[1],   sign-extended
+*                  010 - LW    word (addr_low ignored)
+*                  100 - LBU   byte at addr_low,   zero-extended
+*                  101 - LHU   half at addr[1],   zero-extended
+*
+* Change history: 2026-04-14 - MS2: initial version.
 *
 **********************************************************************/
 `timescale 1ns / 1ps
