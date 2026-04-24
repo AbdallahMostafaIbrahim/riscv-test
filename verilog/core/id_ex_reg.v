@@ -37,6 +37,7 @@ module id_ex_reg (
     input  [1:0]  wb_src_in,
     input         c_reg_write_in,
     input         halt_in,
+    input         predicted_taken_in,
 
     output [31:0] pc,
     output [31:0] pc_plus_4,
@@ -57,16 +58,18 @@ module id_ex_reg (
     output        c_mem_write,
     output [1:0]  wb_src,
     output        c_reg_write,
-    output        halt
+    output        halt,
+    output        predicted_taken
 );
 
-    localparam N = 194;
+    localparam N = 195;
 
     wire [N-1:0] d_fresh;
     wire [N-1:0] d;
     wire [N-1:0] q;
 
     assign d_fresh = {
+        predicted_taken_in,
         rs2_in,
         rs1_in,
         halt_in,
@@ -117,7 +120,8 @@ module id_ex_reg (
     assign wb_src      = q[181:180];
     assign c_reg_write = q[182];
     assign halt        = q[183];
-    assign rs1         = q[188:184];
-    assign rs2         = q[193:189];
+    assign rs1             = q[188:184];
+    assign rs2             = q[193:189];
+    assign predicted_taken = q[194];
 
 endmodule

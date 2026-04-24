@@ -62,7 +62,18 @@ module control_unit (
         reg_write = 1'b0;
         halt      = 1'b0;
 
-        case (opcode)
+        // Treat inst = 32'b0 as a pipeline bubble (NOP). Opcode 5'b00_000
+        // would otherwise decode as LOAD, which silently propagates
+        // mem_read=1 through ID/EX into EX/MEM and causes a spurious
+        // mem_stall one cycle later. The pipeline register bubbles
+        // (flush, reset) inject 0x0 as their "no instruction" sentinel,
+        // so we must treat that encoding as a NOP here. The only real
+        // RV32I encoding lost is `lb x0, 0(x0)`, which already discards
+        // its result -- no practical program emits it.
+        if (inst == 32'b0) begin
+            // keep all-zero safe defaults (NOP)
+        end
+        else case (opcode)
             // ---------------- R-type -----------------------------
             `OPCODE_Arith_R: begin
                 case ({inst30, funct3})

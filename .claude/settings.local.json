@@ -28,7 +28,16 @@
       "Bash(make test-i-type *)",
       "Bash(make test-s-type *)",
       "Bash(make test-u-type *)",
-      "Bash(make test-load *)"
+      "Bash(make test-load *)",
+      "Bash(where iverilog *)",
+      "Bash(tee /tmp/compile.log)",
+      "Bash(vvp /tmp/btype.vvp)",
+      "Bash(make test-loop10 *)",
+      "Bash(cp test/mem/loop10.hex test/mem/inst.hex)",
+      "Bash(vvp /tmp/trace)",
+      "Bash(vvp /tmp/trace_base)",
+      "Bash(git -C E:/Stuff/gam3a/riscv-test log --all --diff-filter=D --summary)",
+      "Bash(git -C E:/Stuff/gam3a/riscv-test log --all --oneline --name-only)"
     ]
   }
 }

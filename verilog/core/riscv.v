@@ -66,7 +66,14 @@ module riscv (
     //              signal); used by external tooling after all
     //              real instructions ahead of the halt have
     //              committed.
-    assign pc_load = ~halting & (flush | ~stall);
+    //
+    // flush overrides halting: a misprediction redirect from MEM
+    // must take effect even if an ebreak (on the speculative
+    // fall-through path) has already entered ID/EX. The flush
+    // squashes that ebreak and steers PC to the correct target;
+    // without this override, a back-branch immediately followed
+    // by ebreak deadlocks the redirect.
+    assign pc_load = flush | (~halting & ~stall);
 
     /* ================================================================
      * IF Stage
@@ -75,6 +82,8 @@ module riscv (
     wire [31:0] pc_plus_4_if;
     wire [31:0] inst_if;
     wire        pc_plus_4_if_cout;
+    wire        predict_taken_if;
+    wire [31:0] predict_target_if;
 
     register #(.N(32)) pc_reg (
         .clk (clk),
@@ -82,6 +91,20 @@ module riscv (
         .load(pc_load),
         .d   (pc_next),
         .q   (pc_if)
+    );
+
+    // Branch predictor: combinational lookup in IF, synchronous
+    // update in MEM on every resolved conditional branch.
+    branch_predictor bp (
+        .clk           (clk),
+        .rst           (rst),
+        .pc_if         (pc_if),
+        .predict_taken (predict_taken_if),
+        .predict_target(predict_target_if),
+        .update_valid  (ex_mem_c_branch),
+        .update_pc     (ex_mem_pc),
+        .update_taken  (branch_taken_mem),
+        .update_target (ex_mem_pc_plus_imm)
     );
 
     // Alias exposed for testbenches that probe the committed PC.
@@ -112,20 +135,23 @@ module riscv (
     wire [31:0] if_id_pc;
     wire [31:0] if_id_pc_plus_4;
     wire [31:0] if_id_inst;
+    wire        if_id_predicted_taken;
 
-    assign if_id_load = ~halting & (flush | ~stall);
+    assign if_id_load = flush | (~halting & ~stall);
 
     if_id_reg if_id (
-        .clk         (clk),
-        .rst         (rst),
-        .load        (if_id_load),
-        .bubble      (flush),
-        .pc_in       (pc_if),
-        .pc_plus_4_in(pc_plus_4_if),
-        .inst_in     (inst_if),
-        .pc          (if_id_pc),
-        .pc_plus_4   (if_id_pc_plus_4),
-        .inst        (if_id_inst)
+        .clk               (clk),
+        .rst               (rst),
+        .load              (if_id_load),
+        .bubble            (flush),
+        .pc_in             (pc_if),
+        .pc_plus_4_in      (pc_plus_4_if),
+        .inst_in           (inst_if),
+        .predicted_taken_in(predict_taken_if),
+        .pc                (if_id_pc),
+        .pc_plus_4         (if_id_pc_plus_4),
+        .inst              (if_id_inst),
+        .predicted_taken   (if_id_predicted_taken)
     );
 
     /* ================================================================
@@ -228,6 +254,7 @@ module riscv (
     wire [1:0]  id_ex_wb_src;
     wire        id_ex_c_reg_write;
     wire        id_ex_halt;
+    wire        id_ex_predicted_taken;
 
     id_ex_reg id_ex (
         .clk            (clk),
@@ -254,6 +281,7 @@ module riscv (
         .wb_src_in      (wb_src_id),
         .c_reg_write_in (c_reg_write_id),
         .halt_in        (halt_id),
+        .predicted_taken_in(if_id_predicted_taken),
 
         .pc             (id_ex_pc),
         .pc_plus_4      (id_ex_pc_plus_4),
@@ -274,7 +302,8 @@ module riscv (
         .c_mem_write    (id_ex_c_mem_write),
         .wb_src         (id_ex_wb_src),
         .c_reg_write    (id_ex_c_reg_write),
-        .halt           (id_ex_halt)
+        .halt           (id_ex_halt),
+        .predicted_taken(id_ex_predicted_taken)
     );
 
     /* ================================================================
@@ -390,12 +419,15 @@ module riscv (
     wire        ex_mem_flag_c;
     wire        ex_mem_flag_v;
     wire        ex_mem_flag_n;
+    wire [31:0] ex_mem_pc;
+    wire        ex_mem_predicted_taken;
 
     ex_mem_reg ex_mem (
         .clk            (clk),
         .rst            (rst),
         .bubble         (flush),
 
+        .pc_in          (id_ex_pc),
         .alu_out_in     (alu_out_ex),
         .rs2_data_in    (rs2_fwd_ex),
         .pc_plus_4_in   (id_ex_pc_plus_4),
@@ -414,7 +446,9 @@ module riscv (
         .flag_c_in      (flag_c_ex),
         .flag_v_in      (flag_v_ex),
         .flag_n_in      (flag_n_ex),
+        .predicted_taken_in(id_ex_predicted_taken),
 
+        .pc             (ex_mem_pc),
         .alu_out        (ex_mem_alu_out),
         .rs2_data       (ex_mem_rs2_data),
         .pc_plus_4      (ex_mem_pc_plus_4),
@@ -432,7 +466,8 @@ module riscv (
         .flag_z         (ex_mem_flag_z),
         .flag_c         (ex_mem_flag_c),
         .flag_v         (ex_mem_flag_v),
-        .flag_n         (ex_mem_flag_n)
+        .flag_n         (ex_mem_flag_n),
+        .predicted_taken(ex_mem_predicted_taken)
     );
 
     /* ================================================================
@@ -510,10 +545,28 @@ module riscv (
 
     // jalr target: force 2-byte alignment (rs1 + imm) & ~1
     wire [31:0] jalr_target_mem;
-    wire        pc_rel_taken_mem;
     assign jalr_target_mem  = { ex_mem_alu_out[31:1], 1'b0 };
-    assign pc_rel_taken_mem = branch_taken_mem
-                              | (ex_mem_c_jump & ~ex_mem_c_jalr);
+
+    // Misprediction split by direction. ex_mem_predicted_taken is
+    // the 1-bit prediction carried down the pipe from IF.
+    wire mispred_nt_to_t;
+    wire mispred_t_to_nt;
+    assign mispred_nt_to_t = ex_mem_c_branch
+                           &  branch_taken_mem
+                           & ~ex_mem_predicted_taken;
+    assign mispred_t_to_nt = ex_mem_c_branch
+                           & ~branch_taken_mem
+                           &  ex_mem_predicted_taken;
+
+    // pc_rel_taken_mem: MEM is redirecting to pc+imm. With
+    // prediction, this fires only on a NT->T misprediction or
+    // a JAL (unpredicted). A correctly-predicted taken branch
+    // does NOT set this -- the pipe already flows to the target.
+    wire pc_rel_taken_mem;
+    wire pc_rel_not_taken_mem;
+    assign pc_rel_taken_mem     = mispred_nt_to_t
+                                | (ex_mem_c_jump & ~ex_mem_c_jalr);
+    assign pc_rel_not_taken_mem = mispred_t_to_nt;
 
     /* ================================================================
      * MEM/WB Pipeline Register
@@ -585,18 +638,24 @@ module riscv (
 
     /* ================================================================
      * Branch / Jump flush
-     * Any PC redirect from MEM (taken branch, JAL, or JALR) means
-     * the three wrong-path instructions currently in IF, ID, and
-     * EX must be squashed. The flush signal bubbles IF/ID, ID/EX,
-     * and EX/MEM so they can't cause writebacks or dmem writes.
+     * MEM redirects the PC whenever there's a misprediction
+     * (either direction) or an unconditional jump (JAL / JALR,
+     * which aren't predicted). On redirect, the three wrong-path
+     * instructions currently in IF, ID, and EX are squashed.
+     * A correctly-predicted taken branch does NOT flush.
      * ================================================================ */
-    assign flush = branch_taken_mem | ex_mem_c_jump | ex_mem_c_jalr;
+    assign flush = pc_rel_taken_mem
+                 | pc_rel_not_taken_mem
+                 | ex_mem_c_jalr;
 
     /* ================================================================
      * Next PC Logic
-     * Branches and jumps are resolved in MEM. When not redirected
-     * we fall through to IF's pc+4. With flush wired, wrong-path
-     * instructions behind the branch are turned into bubbles.
+     * Priority:
+     *   1. JALR          -> jalr_target (absolute, from ALU)
+     *   2. pc+imm redirect (NT->T misprediction OR JAL)
+     *   3. pc+4 redirect   (T->NT misprediction)
+     *   4. predictor says taken in IF -> BTB target
+     *   5. fall through   -> IF's pc+4
      * ================================================================ */
     reg [31:0] pc_next_r;
     assign pc_next = pc_next_r;
@@ -606,6 +665,10 @@ module riscv (
             pc_next_r = jalr_target_mem;
         else if (pc_rel_taken_mem)
             pc_next_r = ex_mem_pc_plus_imm;
+        else if (pc_rel_not_taken_mem)
+            pc_next_r = ex_mem_pc_plus_4;
+        else if (predict_taken_if)
+            pc_next_r = predict_target_if;
         else
             pc_next_r = pc_plus_4_if;
     end
