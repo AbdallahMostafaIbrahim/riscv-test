@@ -7,7 +7,7 @@
 | Abdallah Mostafa Ibrahim | 900232544 |
 | John Saif                | 900232149 |
 
-## Milestone 3 Scope
+## Project Description
 
 This milestone delivers a **5-stage pipelined** RV32I core (IF - ID -
 EX - MEM - WB) backed by a **single single-ported, byte-addressable
@@ -19,7 +19,7 @@ alternative solution to the single-port structural hazard (Bonus 5).
 
 ### What Works
 
-- All **37 user-level RV32I instructions** (same coverage as MS2):
+- All **37 user-level RV32I instructions**:
   - R-type: `add sub sll slt sltu xor srl sra or and`
   - I-type ALU: `addi slti sltiu xori ori andi slli srli srai`
   - Loads: `lb lh lw lbu lhu`
@@ -75,13 +75,6 @@ alternative solution to the single-port structural hazard (Bonus 5).
   forced off (`assign predict_taken = 0;`) - a 21-cycle / ~31%
   reduction on a 10-iteration counting loop.
 
-### What Doesn't Work / What's Deferred
-
-- The branch predictor scope is **conditional branches only**: JAL
-  and JALR never train the BHT/BTB and always flush three bubbles.
-  This was a deliberate scope choice - extending the predictor to
-  unconditional jumps would be cheap but is left for future work.
-
 ## Assumptions
 
 - **Memory size:** 4 KiB, 1024 words of 32 bits, byte-addressable
@@ -129,7 +122,7 @@ initial begin
 end
 ```
 
-### Quick path: Icarus Verilog + Makefile
+### Icarus Verilog + Makefile
 
 The repo includes a `Makefile` that wraps `iverilog` and the
 custom assembler (`tools/asm.py`).
