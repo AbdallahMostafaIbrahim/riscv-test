@@ -368,11 +368,8 @@ We disabled to predictor by forcing `assign predict_taken
 
 > ![S-type waveform](screenshots/s.png)
 >
-> _`s-type_tb.v` - `wdata` and `write_mask` exercise the byte-lane
-> path: `sw` with mask `1111` writes `0x00000008`; `sh` with mask
-> `0011` writes `0x0000ffff`; `sb` with mask `0001` writes the low
-> byte of `0x08080808`._
-
+> _`s-type_tb.v` -  writes `0x00000008`, `0x0000ffff` and `0x08080808`
+> 
 > ![Load waveform](screenshots/load.png)
 >
 > _`load_tb.v` - after seed stores of `0x87654321` and `0xffffff80`,
@@ -429,11 +426,7 @@ dmem[256..263] = 00000000  (loop body does no stores)
 test/test_benches/dump_tb.v:55: $finish called at 485000 (1ps)
 ```
 
-_Confirms the predictor-enabled run: `x1 = 0x37 = 55` is the
-expected sum, the program halts at cycle 47 (matching the 47-cycle
-figure in §4.3), and `predict_taken` was low on iteration 1 (BTB
-cold) and high on iterations 2-10, with `flush` pulsing only on
-iteration 1 (cold miss) and iteration 10 (exit)._
+Test output shows that the loop10 test halted after 47 cycles exactly with the predictor enabled.
 
 ---
 
