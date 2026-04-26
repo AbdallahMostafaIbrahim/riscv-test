@@ -151,7 +151,7 @@ Mapped against the deliverable structure in the project description:
 ```
 .
 ├── README.md               # this file
-├── REPORT.md               # Milestone 3 report (with bonuses)
+├── REPORT.pdf               # Milestone 3 report (with bonuses)
 ├── Makefile                # iverilog build / test driver
 ├── schematic.png           # pipelined datapath diagram
 ├── tools/
