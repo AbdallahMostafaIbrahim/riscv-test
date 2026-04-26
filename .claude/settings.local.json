@@ -37,7 +37,10 @@
       "Bash(vvp /tmp/trace)",
       "Bash(vvp /tmp/trace_base)",
       "Bash(git -C E:/Stuff/gam3a/riscv-test log --all --diff-filter=D --summary)",
-      "Bash(git -C E:/Stuff/gam3a/riscv-test log --all --oneline --name-only)"
+      "Bash(git -C E:/Stuff/gam3a/riscv-test log --all --oneline --name-only)",
+      "Bash(make test-forward *)",
+      "Bash(tclsh -c 'set fp [open vivado_project.tcl r]; set src [read $fp]; close $fp; if {[catch {info complete $src} err]} {puts \"syntax error: $err\"; exit 1}; if {![info complete $src]} {puts \"incomplete script\"; exit 1}; puts \"vivado_project.tcl: parse OK\"')",
+      "Bash(tclsh -c 'set fp [open vivado_run.tcl r]; set src [read $fp]; close $fp; if {[catch {info complete $src} err]} {puts \"syntax error: $err\"; exit 1}; if {![info complete $src]} {puts \"incomplete script\"; exit 1}; puts \"vivado_run.tcl: parse OK\"')"
     ]
   }
 }

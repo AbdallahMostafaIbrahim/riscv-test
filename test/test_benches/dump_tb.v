@@ -2,11 +2,8 @@
 *
 * Module: dump_tb.v
 * Project: RISCV Processor
-* Author: Arch Island
 * Description: Generic testbench for one-off programs 
 *              that dumps register file and memory
-*
-* Change history: 2026-04-15 - MS2: initial version.
 *
 **********************************************************************/
 `timescale 1ns / 1ps

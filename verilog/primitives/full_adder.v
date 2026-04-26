@@ -2,11 +2,8 @@
 *
 * Module: full_adder.v
 * Project: RISCV Processor
-* Author: Arch Island
 * Description: 1-bit full adder used as the building block of the
 *              ripple-carry adder.
-*
-* Change history: 2026-04-14 - Cleanup pass: header, formatting.
 *
 **********************************************************************/
 `timescale 1ns / 1ps

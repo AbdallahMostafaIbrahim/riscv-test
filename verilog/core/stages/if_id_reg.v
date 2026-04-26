@@ -2,9 +2,9 @@
 *
 * Module: if_id_reg.v
 * Project: RISCV Processor
-* Description: IF/ID pipeline register. Latches pc, pc_plus_4, inst
+* Description: IF/ID pipeline register. stores pc, pc_plus_4, inst
 *              and the predicted-taken bit. bubble zeros the input
-*              on flush; load=0 freezes on stall or halt.
+*              on flush, load=0 freezes on stall or halt.
 *
 **********************************************************************/
 `timescale 1ns / 1ps

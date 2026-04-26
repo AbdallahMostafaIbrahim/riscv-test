@@ -2,7 +2,7 @@
 *
 * Module: id_ex_reg.v
 * Project: RISCV Processor
-* Description: ID/EX pipeline register. Latches operands, immediate
+* Description: ID/EX pipeline register. stores operands, immediate
 *              and controls for EX. bubble zeros every field on a
 *              load-use stall or a branch flush so no wrong-path
 *              instruction enters EX.

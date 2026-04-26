@@ -1,7 +1,7 @@
 /*******************************************************************
 *
 * Module: riscv.v
-* Project: riscv32Project
+* Project: RISCV Processor
 * Description: 5-stage pipelined RV32I core (IF -> ID -> EX -> MEM -> WB).
 *              Forwarding + load-use stall cover data hazards. Branches
 *              resolve in MEM against a 1-bit predictor; mispredictions

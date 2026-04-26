@@ -2,12 +2,8 @@
 *
 * Module: ripple.v
 * Project: RISCV Processor
-* Author: Arch Island
 * Description: Parameterized N-bit ripple-carry adder with carry-in
-*              and carry-out. Replaces the previous rca module.
-*
-* Change history: 2026-04-14 - Cleanup pass: header, dot-notation
-*                              instantiation, formatting.
+*              and carry-out.
 *
 **********************************************************************/
 `timescale 1ns / 1ps

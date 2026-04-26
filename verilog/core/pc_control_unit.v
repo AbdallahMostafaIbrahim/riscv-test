@@ -1,7 +1,7 @@
 /*******************************************************************
 *
 * Module: pc_control_unit.v
-* Project: riscv32Project
+* Project: RISCV Processor
 * Description: Resolves next PC and pipeline flush. Combines MEM-stage
 *              branch/jump resolution with the IF-stage predictor
 *              output. A correctly-predicted taken branch does NOT

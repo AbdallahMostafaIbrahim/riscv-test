@@ -2,12 +2,8 @@
 *
 * Module: mux.v
 * Project: RISCV Processor
-* Author: Arch Island
 * Description: Parameterized N-bit 2-to-1 multiplexer.
 *              out = (sel == 0) ? a : b
-*
-* Change history: 2026-04-14 - Cleanup pass: header, formatting,
-*                              lowercase port names.
 *
 **********************************************************************/
 `timescale 1ns / 1ps

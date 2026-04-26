@@ -1,4 +1,4 @@
-# S-Type Instructions (unified single-port memory)
+# S-Type Instructions
 # Data region starts at 0x400 so stores don't overwrite program code.
 
     addi  x28, x0, 0x400         # x28 = data base = 0x400

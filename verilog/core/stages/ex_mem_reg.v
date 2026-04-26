@@ -6,7 +6,7 @@
 *              data (for stores), PC arithmetic, ALU flags, and the
 *              control bits MEM uses to resolve the branch. bubble
 *              zeros everything on flush so wrong-path writes never
-*              reach dmem or the reg file.
+*              reach mem or the reg file.
 *
 **********************************************************************/
 `timescale 1ns / 1ps

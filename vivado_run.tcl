@@ -5,9 +5,8 @@
 #
 # Then in the Tcl Console:
 #     run_prog fibonacci                   ; # assembles + runs dump_tb
-#     run_prog default                     ; # assembles default + dump_tb
-#     run_prog default -tb riscv_tb        ; # run the regression
-#     run_prog myprog  -tb dump_tb         ; # same default but explicit
+#     run_prog forward    -tb forward_tb   ; # run the forward testbench
+#     run_prog b-type     -tb b-type_tb    ; # run the b-type regression
 
 proc run_prog {name args} {
     # Default testbench is dump_tb. Override with -tb <name>.
@@ -23,8 +22,8 @@ proc run_prog {name args} {
     }
 
     set repo_root [file normalize [file dirname [info script]]]
-    set src "$repo_root/tests/$name.s"
-    set dst "$repo_root/mem/inst.hex"
+    set src "$repo_root/test/asm/$name.s"
+    set dst "$repo_root/test/mem/inst.hex"
 
     if {![file exists $src]} {
         puts "ERROR: $src not found"

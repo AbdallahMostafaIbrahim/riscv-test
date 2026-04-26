@@ -1,7 +1,7 @@
 /*******************************************************************
 *
 * Module: hazard_unit.v
-* Project: riscv32Project
+* Project: RISCV Processor
 * Description: Produces `stall` for both the load-use data hazard
 *              and the single-port memory structural hazard.
 *

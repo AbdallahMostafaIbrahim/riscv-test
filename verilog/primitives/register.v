@@ -2,13 +2,9 @@
 *
 * Module: register.v
 * Project: RISCV Processor
-* Author: Arch Island
 * Description: Parameterized N-bit register with synchronous load
 *              enable and async active-high reset. Built from
 *              individual flip_flop primitives driven by a 2:1 mux.
-*
-* Change history: 2026-04-14 - Cleanup pass: header, dot-notation
-*                              instantiation, formatting.
 *
 **********************************************************************/
 `timescale 1ns / 1ps

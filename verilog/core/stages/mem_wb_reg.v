@@ -3,8 +3,8 @@
 * Module: mem_wb_reg.v
 * Project: RISCV Processor
 * Description: MEM/WB pipeline register. Carries the three writeback
-*              candidates (ALU result, loaded data, pc+4) and the WB
-*              control bits. No bubble: once an instruction reaches
+*              possible values (ALU result, loaded data, pc+4) and the WB
+*              control bits. No bubble as if an instruction reaches
 *              MEM it is committed.
 *
 **********************************************************************/

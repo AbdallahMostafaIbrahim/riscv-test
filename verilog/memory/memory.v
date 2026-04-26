@@ -4,8 +4,8 @@
 * Project: RISCV Processor
 * Description: Unified single-port byte-addressable memory, 4 KiB
 *              (1024 x 32-bit). Holds both instructions and data.
-*              Reads combinational; writes synchronous, per-byte
-*              gated by write_mask. Initial image from inst.hex.
+*              Reads combinational, writes synchronous, uses per-byte
+*              write_mask. Initial program from inst.hex.
 *
 **********************************************************************/
 `timescale 1ns / 1ps
@@ -21,8 +21,7 @@ module memory (
     reg     [31:0] mem [0:1023];
     integer        i;
 
-    // Zero the array first so partial-word stores leave predictable
-    // bytes in untouched lanes; then overlay the program image.
+    // Zero the array first so we have predictable content
     initial begin
         for (i = 0; i < 1024; i = i + 1)
             mem[i] = 32'b0;
