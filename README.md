@@ -154,6 +154,8 @@ Mapped against the deliverable structure in the project description:
 ├── REPORT.md               # Milestone 3 report (with bonuses)
 ├── Makefile                # iverilog build / test driver
 ├── schematic.png           # pipelined datapath diagram
+├── tools/
+│   └── asm.py              # minimal RV32I assembler (.s -> .hex)
 ├── journal/                # one journal per team member
 │   ├── abdallah.md
 │   └── john.md
