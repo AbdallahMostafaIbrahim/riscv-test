@@ -85,19 +85,6 @@ alternative solution to the single-port structural hazard (Bonus 5).
   the program, words `256..1023` (`0x400..0xFFF`) are data. Test
   programs set `x28 = 0x400` and use it as the data base so loads
   and stores cannot overwrite instructions.
-- **Reset:** asynchronous active-high `rst` clears PC, register
-  file, BHT (initialised to `2'b01` weakly-not-taken), BTB valid
-  bits, and all pipeline registers.
-- **Halt:** once a halting opcode reaches ID, `halt_pending` freezes
-  PC and IF/ID so no new instructions enter the pipeline while the
-  earlier ones drain. `halted` goes high once the halt has reached
-  WB; the testbenches wait on this.
-- **Branch resolution:** branches consult the predictor in IF and
-  speculatively fetch from `predict_target` if the BHT MSB is high
-  and the BTB tags match. Conditional branches, JAL, and JALR all
-  resolve in MEM; mispredictions / JAL / JALR flush three bubbles.
-- **Register file:** negative-edge triggered write so WB in the
-  first half of the cycle is visible to ID in the second half.
 
 ## How to Test
 
