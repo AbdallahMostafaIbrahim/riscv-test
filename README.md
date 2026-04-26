@@ -77,9 +77,6 @@ alternative solution to the single-port structural hazard (Bonus 5).
 
 ### What Doesn't Work / What's Deferred
 
-- Bonus 1 (RV32IC compressed), Bonus 2 (RV32IM mul/div), Bonus 4
-  (move branch resolve to ID), and Bonus 6 (random program
-  generator) are not implemented.
 - The branch predictor scope is **conditional branches only**: JAL
   and JALR never train the BHT/BTB and always flush three bubbles.
   This was a deliberate scope choice - extending the predictor to
@@ -110,6 +107,27 @@ alternative solution to the single-port structural hazard (Bonus 5).
   first half of the cycle is visible to ID in the second half.
 
 ## How to Test
+
+### Vivado
+
+In Vivado, pick the target `test/mem/<name>.hex` as instruction
+memory (copy it to `inst.hex`, which is what `memory.v` reads via
+`$readmemh` on reset), add the Verilog under `verilog/` to the
+project, and select the corresponding `<name>_tb.v` as the
+simulation top. The relevant snippet from `verilog/memory/memory.v`
+is:
+
+```verilog
+reg     [31:0] mem [0:1023];
+integer        i;
+
+// Zero the array first so we have predictable content
+initial begin
+    for (i = 0; i < 1024; i = i + 1)
+        mem[i] = 32'b0;
+    $readmemh("inst.hex", mem);
+end
+```
 
 ### Quick path: Icarus Verilog + Makefile
 
@@ -145,13 +163,6 @@ the same pipeline but against the generic `dump_tb.v` that prints
 every register and the first 8 words of data memory. `make
 test-all` discovers every `<name>.s` that has a matching
 `<name>_tb.v` and reports pass / fail per test.
-
-### Vivado
-
-In Vivado, pick the target `test/mem/<name>.hex` as instruction
-memory (copy it to `inst.hex`, which is what `memory.v` reads on
-line 28), add the Verilog under `verilog/` to the project, and
-select the corresponding `<name>_tb.v` as the simulation top.
 
 ## Directory Layout
 
