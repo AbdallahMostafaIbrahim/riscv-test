@@ -299,42 +299,31 @@ Three layers of tests:
    (`test/test_benches/<type>_tb.v`): assemble the matching
    `test/asm/<type>.s`, run to `ebreak`, then check expected
    register and memory values. Each check prints `PASS` or
-   `FAIL`; the summary prints total pass count and errors.
+   `FAIL`. The summary prints total pass count and errors.
 2. **Hazard / pipeline self-checking testbench** (`forward_tb.v`)
-   runs `test/asm/forward.s` with 27 explicit register / memory
-   assertions covering 1-, 2-, and 3-instruction RAW, load-use
+   runs `test/asm/forward.s` with assertions covering 1,2,3-instruction RAW, load-use
    stalls, structural stalls, and branch / JAL flushes.
 3. **Branch-predictor measurement testbench** (`loop10_tb.v`) runs
    `test/asm/loop10.s` with 3 result checks plus a printed cycle
    count. The cycle count is the empirical evidence for Bonus 3.
 
-Build is driven by a Makefile wrapping Icarus Verilog and a small
-RV32I assembler (`tools/asm.py`). `make test-<name>` assembles,
-links, and runs a single testbench; `make run PROG=<name>` does
-the same but against `dump_tb.v`; `make test-all` discovers every
-`<name>.s`-plus-`<name>_tb.v` pair and runs them all.
-
 ### 4.2 Instructions Tested
 
-| Test bench    | Instructions / focus                           | Checks |
-| ------------- | ---------------------------------------------- | -----: |
-| `i-type_tb.v` | `addi slti sltiu xori ori andi slli srli srai` |      9 |
-| `r-type_tb.v` | `add sub sll slt sltu xor srl sra or and`      |     10 |
-| `s-type_tb.v` | `sb sh sw`                                     |      3 |
-| `load_tb.v`   | `lb lh lw lbu lhu`                             |      5 |
-| `b-type_tb.v` | `beq bne blt bge bltu bgeu` (taken + not-taken)|     12 |
-| `u-type_tb.v` | `lui auipc`                                    |      2 |
-| `j-type_tb.v` | `jal jalr`                                     |      5 |
-| `forward_tb.v`| forwarding, load-use, branch / JAL flush       |     27 |
-| `loop10_tb.v` | 10-iteration loop (predictor speedup)          |      3 |
-
-Total: **76 independent checks**, all passing under the pipelined
-core, unified memory, and branch predictor.
+| Test bench    | Instructions / focus                           |
+| ------------- | ---------------------------------------------- | 
+| `i-type_tb.v` | `addi slti sltiu xori ori andi slli srli srai` |  
+| `r-type_tb.v` | `add sub sll slt sltu xor srl sra or and`      |   
+| `s-type_tb.v` | `sb sh sw`                                     | 
+| `load_tb.v`   | `lb lh lw lbu lhu`                             |   
+| `b-type_tb.v` | `beq bne blt bge bltu bgeu` (taken + not-taken)|     
+| `u-type_tb.v` | `lui auipc`                                    |   
+| `j-type_tb.v` | `jal jalr`                                     |     
+| `forward_tb.v`| forwarding, load-use, branch / JAL flush       |   
+| `loop10_tb.v` | 10-iteration loop (predictor speedup)          | 
 
 ### 4.3 Hazard / pipeline tests
 
-**`test/asm/forward.s`** (run by `forward_tb.v`) - full hazard
-scorecard.
+**`test/asm/forward.s`** (run by `forward_tb.v`)
 
 - Chained 1-inst RAW (`x5..x9` = 10, 15, 20, 25, 30) - EX/MEM
   forwarding.
@@ -348,35 +337,22 @@ scorecard.
   and (critically) the flushed `addi x28, x0, 33` did not
   overwrite the data base, so `x28` is still `0x400`.
 
-All 27 assertions pass.
-
-**`test/asm/loop10.s`** (run by `loop10_tb.v`) - branch-predictor
+**`test/asm/loop10.s`** (run by `loop10_tb.v`):  branch-predictor
 speedup measurement. The program is a three-instruction loop body
 (`addi`, `add`, `bne`) iterating 10 times, summing `1..10` into
 `x1`. The exit branch is taken nine times and not-taken once, so
-under a perfect predictor with a cold-start penalty we expect
-exactly **two mispredictions** - the cold first encounter (BHT =
-weakly-NT, BTB invalid) and the final exit (BHT = strongly-T after
-warmup, but actually NT).
+with our 2-bit predictor that is initially weakly not taken, we get
+exactly **two mispredictions** (the first and last iterations)
 
 | Configuration             | Cycles to halt | Flush penalty |
 | ------------------------- | -------------: | ------------: |
 | With predictor enabled    |             47 |     2 × 3 = 6 |
 | Predictor disabled¹       |             68 |     9 × 3 = 27 |
 
-¹ Forced by editing `branch_predictor.v` to `assign predict_taken
-= 0;`, leaving the rest of the pipeline unchanged.
-
-The 21-cycle gap matches the theoretical difference: 9 taken
-branches × 3 wasted cycles = 27 baseline flush cycles, vs. 2 ×
-3 = 6 with the predictor. That is a ~31 % cycle reduction on this
-benchmark and confirms the predictor is delivering the expected
-speedup.
+We disabled to predictor by forcing `assign predict_taken
+= 0;` in `branch_predictor.v`.
 
 ### 4.4 Simulation waveforms
-
-Captions describe the predictor-aware behaviour where applicable.
-Screenshot files live under `screenshots/`.
 
 > ![R-type waveform](screenshots/r.png)
 >
