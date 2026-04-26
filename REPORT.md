@@ -299,19 +299,23 @@ Branches, JAL, and JALR all resolve in MEM. By the time the
 redirect signal rises, three wrong-path instructions are in IF, ID,
 and EX. We squash them by forcing the bubble input of `if_id_reg`,
 `id_ex_reg`, and `ex_mem_reg` to one for one cycle. The flush
-signal is
+signal as written in `pc_control_unit.v` (lines 51-56) is
 
 ```
-flush = mispred_nt_to_t | mispred_t_to_nt | ex_mem_c_jalr;
+pc_rel_taken     = mispred_nt_to_t | (ex_mem_c_jump & ~ex_mem_c_jalr);
+pc_rel_not_taken = mispred_t_to_nt;
+flush            = pc_rel_taken | pc_rel_not_taken | ex_mem_c_jalr;
 ```
 
-(see `pc_control_unit.v` line 56). Compared to an
+i.e. flush fires on (a) a NT-to-T misprediction, (b) JAL (which is
+unconditionally taken and not predicted, so the three speculative
+fall-through instructions in IF/ID/EX must be killed), (c) a T-to-NT
+misprediction, or (d) JALR (separate path because its target goes
+through the ALU; not predicted, always flushes). Compared to an
 always-flush-on-taken-branch design, this form **only flushes on
-misprediction** for conditional branches. JAL is unconditionally
-taken and is handled by the `pc_rel_taken` term inside
-`pc_control_unit` (`ex_mem_c_jump & ~ex_mem_c_jalr`). JALR has a
-separate path because its target goes through the ALU; it is not
-predicted and therefore always flushes.
+misprediction** for conditional branches - a correctly-predicted
+taken branch leaves the pipeline alone because IF has already been
+fetching from `predict_target`.
 
 ### 3.5 Single-port memory: selective stalling (Bonus 5)
 
