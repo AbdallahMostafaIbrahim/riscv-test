@@ -367,7 +367,7 @@ We disabled to predictor by forcing `assign predict_taken
 
 > ![S-type waveform](screenshots/s.png)
 >
-> `s-type_tb.v` - writes `0x00000008`, `0x0000ffff` and `0x08080808`
+> _`s-type_tb.v` - writes `0x00000008`, `0x0000ffff` and `0x08080808`_
 >
 > ![Load waveform](screenshots/load.png)
 >
