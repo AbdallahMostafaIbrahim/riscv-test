@@ -410,8 +410,7 @@ We disabled to predictor by forcing `assign predict_taken
 > and on the `jal` redirect, with `pc_next` switching to the
 > resolved target._
 
-**`loop10_tb.v` console output** (no waveform - dump is text-only,
-truncated to the non-zero state):
+**`loop10_tb.v` console output**
 
 ```
 HALT at cycle 47, PC = 00000028
