@@ -22,38 +22,26 @@ instructions. Compared to Milestone 2, this milestone adds:
   registers, each promoted into its own module under
   `verilog/core/stages/`.
 - A **single, single-ported, byte-addressable memory** shared
-  between instruction fetch and data access (the project
-  description's core structural constraint).
+  between instruction fetch and data access.
 - A forwarding unit for EX/MEM and MEM/WB bypassing.
 - A hazard unit for load-use stalls and single-port memory
-  structural stalls.
+  structural hazards.
 - Negative-edge register-file writes so 3-instruction RAW hazards
   resolve without an extra stall.
-- Flush logic that squashes the three wrong-path instructions behind
+- Flush logic that flushes the three wrong-path instructions behind
   a misprediction, JAL, or JALR.
 
-On top of the baseline, two bonuses are delivered:
+Two bonuses are delivered for this project:
 
-- **Bonus 3 - 2-bit dynamic branch prediction.** A 64-entry BHT
-  with 2-bit saturating counters and a 64-entry BTB, looked up
-  combinationally in IF and updated synchronously in MEM. A
-  correctly-predicted taken branch does *not* flush.
+- **Bonus 3 - 2-bit dynamic branch prediction.**
+Instead of assuming "not taken" every time, the processor now *learns* from history. It uses two small lookup tables, each with 64 slots: BHT (Branch History Table): Each slot holds a 2-bit counter that tracks how a branch has behaved recently. It takes two wrong predictions in a row to actually change its state, making it more stable than a simple 1-bit predictor. BTB (Branch Target Buffer): Remembers *where* a branch jumped to last time, so the processor knows which address to fetch from if it predicts "taken." Both tables are checked instantly during the **Fetch** stage (no waiting), and updated later in the **MEM** stage once the branch outcome is known. The big payoff: if the prediction turns out to be correct, the pipeline keeps running smoothly with **no flush needed** — saving those precious wasted cycles.
+
 - **Bonus 5 - alternative single-port memory solution.** Rather
-  than the every-other-cycle issuing scheme prescribed by the
-  project (CPI = 2 for every instruction in a 3-stage 6-cycle
-  datapath), we keep the 5-stage pipeline and stall IF only on
+  than the solution proposed in the lecture which makes the CPI=2 , we keep the 5-stage pipeline and stall IF only on
   cycles when MEM holds the port. Straight-line ALU code therefore
   runs at CPI 1; CPI degrades toward 2 only on load/store-dense
   regions.
 
-The core is written in Verilog-2001/2012 and verified with
-self-checking testbenches for each instruction type, a
-self-checking forwarding / hazard / flush testbench
-(`forward_tb.v`, 27 checks), and a self-checking branch-predictor
-loop testbench (`loop10_tb.v`, 3 checks plus a cycle-count
-measurement). Total: **76 independent checks, all passing**.
-
----
 
 ## 2. Design
 
@@ -280,8 +268,7 @@ read.
    ID for one cycle and bubble ID/EX so next cycle MEM/WB
    forwarding hits.
 
-2. **Single-port memory structural hazard.** See §3.5 - this is
-   the Bonus 5 framing.
+2. **Single-port memory structural hazard.** See §3.5 
 
 When `stall` is asserted:
 
