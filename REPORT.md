@@ -34,14 +34,13 @@ instructions. Compared to Milestone 2, this milestone adds:
 Two bonuses are delivered for this project:
 
 - **Bonus 3 - 2-bit dynamic branch prediction.**
-Instead of assuming "not taken" every time, the processor now *learns* from history. It uses two small lookup tables, each with 64 slots: BHT (Branch History Table): Each slot holds a 2-bit counter that tracks how a branch has behaved recently. It takes two wrong predictions in a row to actually change its state, making it more stable than a simple 1-bit predictor. BTB (Branch Target Buffer): Remembers *where* a branch jumped to last time, so the processor knows which address to fetch from if it predicts "taken." Both tables are checked instantly during the **Fetch** stage (no waiting), and updated later in the **MEM** stage once the branch outcome is known. The big payoff: if the prediction turns out to be correct, the pipeline keeps running smoothly with **no flush needed** — saving those precious wasted cycles.
+  Instead of assuming "not taken" every time, the processor now _learns_ from history. It uses two small lookup tables, each with 64 slots: BHT (Branch History Table): Each slot holds a 2-bit counter that tracks how a branch has behaved recently. It takes two wrong predictions in a row to actually change its state, making it more stable than a simple 1-bit predictor. BTB (Branch Target Buffer): Remembers _where_ a branch jumped to last time, so the processor knows which address to fetch from if it predicts "taken." Both tables are checked instantly during the **Fetch** stage (no waiting), and updated later in the **MEM** stage once the branch outcome is known. The big payoff: if the prediction turns out to be correct, the pipeline keeps running smoothly with **no flush needed** — saving those precious wasted cycles.
 
 - **Bonus 5 - alternative single-port memory solution.** Rather
   than the solution proposed in the lecture which makes the CPI=2 , we keep the 5-stage pipeline and stall IF only on
   cycles when MEM holds the port. Straight-line ALU code therefore
   runs at CPI 1; CPI degrades toward 2 only on load/store-dense
   regions.
-
 
 ## 2. Design
 
@@ -57,7 +56,7 @@ The five stages share one 32-bit data path, separated by the four
 pipeline registers `if_id_reg`, `id_ex_reg`, `ex_mem_reg`, and
 `mem_wb_reg`. Two backward paths cross the pipe: the WB-to-ID
 register-file write port (negedge), and the MEM-to-IF redirect /
-predictor-update path. 
+predictor-update path.
 
 **IF.** The PC is held in a `register` primitive; next-PC is the
 output of `pc_control_unit`, which has five sources in priority
@@ -105,27 +104,27 @@ These are the modules directly instantiated from
 data path, connected through four per-stage pipeline-register
 modules built on top of the `register` primitive.
 
-| Block               | File                                          | Stage | Role                                                                    |
-| ------------------- | --------------------------------------------- | ----- | ----------------------------------------------------------------------- |
-| PC register         | `verilog/primitives/register.v`               | IF    | Holds current PC; `load` gated by halt / stall / flush.                 |
-| PC + 4 adder        | `verilog/primitives/ripple.v`                 | IF    | Sequential next PC.                                                     |
-| Branch predictor    | `verilog/core/branch_predictor.v`             | IF/MEM| 64-entry 2-bit BHT + BTB; lookup IF, update MEM.                        |
-| PC control unit     | `verilog/core/pc_control_unit.v`              | IF/MEM| Picks next PC from {JALR, MEM redirect, predictor, pc+4}; emits flush.  |
-| Unified memory      | `verilog/memory/memory.v`                     | IF/MEM| 4 KiB single-port byte-addressable; holds inst + data.                  |
-| IF/ID register      | `verilog/core/stages/if_id_reg.v`             | -     | 97 bits: `{inst, pc+4, pc, predicted_taken}`.                           |
-| Control unit        | `verilog/core/control_unit.v`                 | ID    | Decodes opcode into all control signals.                                |
-| Immediate gen       | `verilog/core/immediate_gen.v`                | ID    | Extracts immediate for all RV32I formats.                               |
-| Register file       | `verilog/core/reg_file.v`                     | ID/WB | 32 x 32 bits; write on **negedge**, read combinational.                 |
-| Hazard unit         | `verilog/core/hazard_unit.v`                  | ID    | Generates `stall` (load-use + structural).                              |
-| ID/EX register      | `verilog/core/stages/id_ex_reg.v`             | -     | ~242 bits: reg data, imm, rd, rs1/rs2, funct3, control, predicted bit.  |
-| Forwarding unit     | `verilog/core/forwarding_unit.v`              | EX    | Selects newest value for rs1/rs2 (id_ex / EX/MEM / MEM/WB).             |
-| ALU                 | `verilog/core/alu.v`                          | EX    | 10 ops, 4-bit selector, returns Z/C/V/N flags.                          |
-| PC + imm adder      | `verilog/primitives/ripple.v`                 | EX    | Computes branch / JAL target.                                           |
-| EX/MEM register     | `verilog/core/stages/ex_mem_reg.v`            | -     | ~196 bits: alu_out, rs2, pc, pc+4, pc+imm, rd, funct3, flags, control.  |
-| Branch unit         | `verilog/core/branch_unit.v`                  | MEM   | Uses ALU flags + funct3 to decide `taken`.                              |
-| Store / Load units  | `verilog/memory/{store,load}_unit.v`          | MEM   | Byte / halfword selection + mask / extension.                           |
-| MEM/WB register     | `verilog/core/stages/mem_wb_reg.v`            | -     | 105 bits: alu_out, load_out, pc+4, rd, wb_src, reg_write, halt.         |
-| Writeback mux       | inside `riscv.v`                              | WB    | 3:1 mux across `alu_out`, `load_out`, `pc+4`.                           |
+| Block              | File                                 | Stage  | Role                                                                   |
+| ------------------ | ------------------------------------ | ------ | ---------------------------------------------------------------------- |
+| PC register        | `verilog/primitives/register.v`      | IF     | Holds current PC; `load` gated by halt / stall / flush.                |
+| PC + 4 adder       | `verilog/primitives/ripple.v`        | IF     | Sequential next PC.                                                    |
+| Branch predictor   | `verilog/core/branch_predictor.v`    | IF/MEM | 64-entry 2-bit BHT + BTB; lookup IF, update MEM.                       |
+| PC control unit    | `verilog/core/pc_control_unit.v`     | IF/MEM | Picks next PC from {JALR, MEM redirect, predictor, pc+4}; emits flush. |
+| Unified memory     | `verilog/memory/memory.v`            | IF/MEM | 4 KiB single-port byte-addressable; holds inst + data.                 |
+| IF/ID register     | `verilog/core/stages/if_id_reg.v`    | -      | 97 bits: `{inst, pc+4, pc, predicted_taken}`.                          |
+| Control unit       | `verilog/core/control_unit.v`        | ID     | Decodes opcode into all control signals.                               |
+| Immediate gen      | `verilog/core/immediate_gen.v`       | ID     | Extracts immediate for all RV32I formats.                              |
+| Register file      | `verilog/core/reg_file.v`            | ID/WB  | 32 x 32 bits; write on **negedge**, read combinational.                |
+| Hazard unit        | `verilog/core/hazard_unit.v`         | ID     | Generates `stall` (load-use + structural).                             |
+| ID/EX register     | `verilog/core/stages/id_ex_reg.v`    | -      | ~242 bits: reg data, imm, rd, rs1/rs2, funct3, control, predicted bit. |
+| Forwarding unit    | `verilog/core/forwarding_unit.v`     | EX     | Selects newest value for rs1/rs2 (id_ex / EX/MEM / MEM/WB).            |
+| ALU                | `verilog/core/alu.v`                 | EX     | 10 ops, 4-bit selector, returns Z/C/V/N flags.                         |
+| PC + imm adder     | `verilog/primitives/ripple.v`        | EX     | Computes branch / JAL target.                                          |
+| EX/MEM register    | `verilog/core/stages/ex_mem_reg.v`   | -      | ~196 bits: alu_out, rs2, pc, pc+4, pc+imm, rd, funct3, flags, control. |
+| Branch unit        | `verilog/core/branch_unit.v`         | MEM    | Uses ALU flags + funct3 to decide `taken`.                             |
+| Store / Load units | `verilog/memory/{store,load}_unit.v` | MEM    | Byte / halfword selection + mask / extension.                          |
+| MEM/WB register    | `verilog/core/stages/mem_wb_reg.v`   | -      | 105 bits: alu_out, load_out, pc+4, rd, wb_src, reg_write, halt.        |
+| Writeback mux      | inside `riscv.v`                     | WB     | 3:1 mux across `alu_out`, `load_out`, `pc+4`.                          |
 
 ### 2.3 Control-signal summary
 
@@ -133,21 +132,21 @@ All control signals are produced by `control_unit.v` in the ID stage
 and travel down the pipeline inside the pipeline registers. The
 full set is unchanged from MS2:
 
-| Signal      | Width | Meaning                            |
-| ----------- | ----- | ---------------------------------- |
-| `alu_sel`   | 4     | ALU op (from `defines.v`)          |
-| `alu_src_a` | 2     | `00`=rs1, `01`=PC, `10`=0          |
-| `alu_src_b` | 1     | `0`=rs2, `1`=imm                   |
-| `branch`    | 1     | branch instruction                 |
-| `jump`      | 1     | `jal` or `jalr`                    |
-| `jalr`      | 1     | `jalr` specifically                |
-| `mem_read`  | 1     | loads                              |
-| `mem_write` | 1     | stores                             |
-| `wb_src`    | 2     | `00`=ALU, `01`=mem, `10`=PC+4      |
-| `reg_write` | 1     | register writeback                 |
-| `halt`      | 1     | ECALL / EBREAK / FENCE* / PAUSE    |
+| Signal      | Width | Meaning                          |
+| ----------- | ----- | -------------------------------- |
+| `alu_sel`   | 4     | ALU op (from `defines.v`)        |
+| `alu_src_a` | 2     | `00`=rs1, `01`=PC, `10`=0        |
+| `alu_src_b` | 1     | `0`=rs2, `1`=imm                 |
+| `branch`    | 1     | branch instruction               |
+| `jump`      | 1     | `jal` or `jalr`                  |
+| `jalr`      | 1     | `jalr` specifically              |
+| `mem_read`  | 1     | loads                            |
+| `mem_write` | 1     | stores                           |
+| `wb_src`    | 2     | `00`=ALU, `01`=mem, `10`=PC+4    |
+| `reg_write` | 1     | register writeback               |
+| `halt`      | 1     | ECALL / EBREAK / FENCE\* / PAUSE |
 
-`predicted_taken` (1 bit) is *not* a control signal, it is produced by the IF-stage predictor and threaded down
+`predicted_taken` (1 bit) is _not_ a control signal, it is produced by the IF-stage predictor and threaded down
 the pipeline registers separately so MEM can compare it against the
 true outcome.
 
@@ -179,11 +178,11 @@ Branches force `ALU_SUB` so the branch unit can read Z / C / N / V.
 
 `forwarding_unit` produces two 2-bit mux selects:
 
-| Sel    | Source                          | When                                               |
-| ------ | ------------------------------- | -------------------------------------------------- |
-| `2'b00`| `id_ex_rs{1,2}_data` (no fwd)   | No RAW match with EX/MEM or MEM/WB.                |
-| `2'b10`| `ex_mem_alu_out` (EX hazard)    | EX/MEM writes the same reg EX reads (and not x0). |
-| `2'b01`| `wb_data_wb` (MEM hazard)       | MEM/WB writes the same reg, no newer EX hazard.   |
+| Sel     | Source                        | When                                              |
+| ------- | ----------------------------- | ------------------------------------------------- |
+| `2'b00` | `id_ex_rs{1,2}_data` (no fwd) | No RAW match with EX/MEM or MEM/WB.               |
+| `2'b10` | `ex_mem_alu_out` (EX hazard)  | EX/MEM writes the same reg EX reads (and not x0). |
+| `2'b01` | `wb_data_wb` (MEM hazard)     | MEM/WB writes the same reg, no newer EX hazard.   |
 
 This catches 1- and 2-instruction RAW. The 3-instruction RAW case
 is handled implicitly by writing the reg file on the negative clock
@@ -201,7 +200,7 @@ read.
    ID for one cycle and bubble ID/EX so next cycle MEM/WB
    forwarding hits.
 
-2. **Single-port memory structural hazard.** See §3.5 
+2. **Single-port memory structural hazard.** See §3.5
 
 When `stall` is asserted:
 
@@ -226,7 +225,7 @@ pc_rel_not_taken = mispred_t_to_nt;
 flush            = pc_rel_taken | pc_rel_not_taken | ex_mem_c_jalr;
 ```
 
-### 3.4 Single-port memory: selective stalling 
+### 3.4 Single-port memory: selective stalling
 
 **Memory Layout.** The memory is a single block of 1024 words (32-bit each). Reads happen instantly (combinational); writes are clocked. Its output is shared. The same data feeds both the fetch path and the load path, depending on context.
 
@@ -251,7 +250,7 @@ instructions enter the pipeline while the earlier ones drain.
 the halt opcode has itself reached WB, which means every
 instruction ahead of it in program order has already committed.
 
-### 3.6 Branch prediction 
+### 3.6 Branch prediction
 
 `verilog/core/branch_predictor.v` is a 2-bit dynamic
 predictor with a Branch Target Buffer:
@@ -266,28 +265,28 @@ predictor with a Branch Target Buffer:
   assign predict_taken = bht[idx][1] & btb_hit;
   ```
 
-  i.e. predict taken iff the 2-bit counter's MSB is set *and* the
+  i.e. predict taken iff the 2-bit counter's MSB is set _and_ the
   BTB tag matches. A BTB miss forces a not-taken prediction even
   if the BHT counter is hot.
+
 - **Update.** Synchronous in MEM, on `update_valid =
-  ex_mem_c_branch`. The 2-bit FSM follows the standard saturating
+ex_mem_c_branch`. The 2-bit FSM follows the standard saturating
   counter:
 
-  | State  | Meaning           | On taken | On not-taken |
-  | ------ | ----------------- | -------- | ------------ |
-  | `2'b00`| Strongly NT       | `2'b01`  | `2'b00`      |
-  | `2'b01`| Weakly NT (init)  | `2'b10`  | `2'b00`      |
-  | `2'b10`| Weakly T          | `2'b11`  | `2'b01`      |
-  | `2'b11`| Strongly T        | `2'b11`  | `2'b10`      |
+  | State   | Meaning          | On taken | On not-taken |
+  | ------- | ---------------- | -------- | ------------ |
+  | `2'b00` | Strongly NT      | `2'b01`  | `2'b00`      |
+  | `2'b01` | Weakly NT (init) | `2'b10`  | `2'b00`      |
+  | `2'b10` | Weakly T         | `2'b11`  | `2'b01`      |
+  | `2'b11` | Strongly T       | `2'b11`  | `2'b10`      |
 
   BTB entries are allocated only on a taken update, so persistently
   not-taken branches stay BTB-cold (and therefore predict not-taken,
   which is correct).
+
 - **Reset.** All 64 BHT entries are initialised to `2'b01` (weakly
   NT). All BTB `valid` bits clear to 0. Consequence: every cold
   branch is predicted not-taken on first encounter, then learns.
-
-
 
 ## 4. Testing
 
@@ -309,17 +308,17 @@ Three layers of tests:
 
 ### 4.2 Instructions Tested
 
-| Test bench    | Instructions / focus                           |
-| ------------- | ---------------------------------------------- | 
-| `i-type_tb.v` | `addi slti sltiu xori ori andi slli srli srai` |  
-| `r-type_tb.v` | `add sub sll slt sltu xor srl sra or and`      |   
-| `s-type_tb.v` | `sb sh sw`                                     | 
-| `load_tb.v`   | `lb lh lw lbu lhu`                             |   
-| `b-type_tb.v` | `beq bne blt bge bltu bgeu` (taken + not-taken)|     
-| `u-type_tb.v` | `lui auipc`                                    |   
-| `j-type_tb.v` | `jal jalr`                                     |     
-| `forward_tb.v`| forwarding, load-use, branch / JAL flush       |   
-| `loop10_tb.v` | 10-iteration loop (predictor speedup)          | 
+| Test bench     | Instructions / focus                            |
+| -------------- | ----------------------------------------------- |
+| `i-type_tb.v`  | `addi slti sltiu xori ori andi slli srli srai`  |
+| `r-type_tb.v`  | `add sub sll slt sltu xor srl sra or and`       |
+| `s-type_tb.v`  | `sb sh sw`                                      |
+| `load_tb.v`    | `lb lh lw lbu lhu`                              |
+| `b-type_tb.v`  | `beq bne blt bge bltu bgeu` (taken + not-taken) |
+| `u-type_tb.v`  | `lui auipc`                                     |
+| `j-type_tb.v`  | `jal jalr`                                      |
+| `forward_tb.v` | forwarding, load-use, branch / JAL flush        |
+| `loop10_tb.v`  | 10-iteration loop (predictor speedup)           |
 
 ### 4.3 Hazard / pipeline tests
 
@@ -337,17 +336,17 @@ Three layers of tests:
   and (critically) the flushed `addi x28, x0, 33` did not
   overwrite the data base, so `x28` is still `0x400`.
 
-**`test/asm/loop10.s`** (run by `loop10_tb.v`):  branch-predictor
+**`test/asm/loop10.s`** (run by `loop10_tb.v`): branch-predictor
 speedup measurement. The program is a three-instruction loop body
 (`addi`, `add`, `bne`) iterating 10 times, summing `1..10` into
 `x1`. The exit branch is taken nine times and not-taken once, so
 with our 2-bit predictor that is initially weakly not taken, we get
 exactly **two mispredictions** (the first and last iterations)
 
-| Configuration             | Cycles to halt | Flush penalty |
-| ------------------------- | -------------: | ------------: |
-| With predictor enabled    |             47 |     2 × 3 = 6 |
-| Predictor disabled¹       |             68 |     9 × 3 = 27 |
+| Configuration          | Cycles to halt | Flush penalty |
+| ---------------------- | -------------: | ------------: |
+| With predictor enabled |             47 |     2 × 3 = 6 |
+| Predictor disabled¹    |             68 |    9 × 3 = 27 |
 
 We disabled to predictor by forcing `assign predict_taken
 = 0;` in `branch_predictor.v`.
@@ -368,8 +367,8 @@ We disabled to predictor by forcing `assign predict_taken
 
 > ![S-type waveform](screenshots/s.png)
 >
-> _`s-type_tb.v` -  writes `0x00000008`, `0x0000ffff` and `0x08080808`
-> 
+> `s-type_tb.v` - writes `0x00000008`, `0x0000ffff` and `0x08080808`
+>
 > ![Load waveform](screenshots/load.png)
 >
 > _`load_tb.v` - after seed stores of `0x87654321` and `0xffffff80`,
@@ -388,27 +387,19 @@ We disabled to predictor by forcing `assign predict_taken
 > ![U-type waveform](screenshots/u.png)
 >
 > _`u-type_tb.v` - `write_data = 0xabcde000` after `lui`, then
-> `0x00001004` after `auipc` (PC + immediate), confirming both
-> upper-immediate forms._
+> `0x00001004` after `auipc` (PC + immediate)_
 
 > ![J-type waveform](screenshots/j.png)
 >
-> _`j-type_tb.v` - `pc_next` shows the non-sequential jumps and
-> `flush` pulsing for each (JAL/JALR are not predicted), with
-> `c_jalr` asserting on the `jalr` redirect; link registers hold
-> the correct return addresses._
+> _`j-type_tb.v` expected behaviour where `x10 != 99` (skipped)._
 
 > ![Forwarding / hazard waveform 1](screenshots/forward_1.png)
 >
-> _`forward_tb.v` (capture 1) - forwarding muxes switching on
-> chained RAW dependencies; `stall` asserting for one cycle on the
-> `lw` -> `addi` load-use pair._
+> _`forward_tb.v` (part 1) - Expected final values for registers._
 
 > ![Forwarding / hazard waveform 2](screenshots/forward_2.png)
 >
-> _`forward_tb.v` (capture 2) - `flush` firing on the taken `beq`
-> and on the `jal` redirect, with `pc_next` switching to the
-> resolved target._
+> _`forward_tb.v` - Expected final values for registers._
 
 **`loop10_tb.v` console output**
 
@@ -428,4 +419,3 @@ test/test_benches/dump_tb.v:55: $finish called at 485000 (1ps)
 Test output shows that the loop10 test halted after 47 cycles exactly with the predictor enabled.
 
 ---
-
