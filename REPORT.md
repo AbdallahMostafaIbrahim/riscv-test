@@ -425,18 +425,39 @@ Screenshot files live under `screenshots/`.
 > `c_jalr` asserting on the `jalr` redirect; link registers hold
 > the correct return addresses._
 
-> ![Forwarding / hazard waveform](screenshots/forward.png) *(placeholder)*
+> ![Forwarding / hazard waveform 1](screenshots/forward_1.png)
 >
-> _`forward_tb.v` - one capture showing the forwarding muxes
-> switching on chained RAW, `stall` firing on the `lw` -> `addi`
-> pair, and `flush` firing on the taken `beq` and `jal`._
+> _`forward_tb.v` (capture 1) - forwarding muxes switching on
+> chained RAW dependencies; `stall` asserting for one cycle on the
+> `lw` -> `addi` load-use pair._
 
-> ![Branch-predictor loop waveform](screenshots/loop10.png) *(placeholder)*
+> ![Forwarding / hazard waveform 2](screenshots/forward_2.png)
 >
-> _`loop10_tb.v` - `predict_taken` is low on iteration 1 (BTB
-> cold), high on iterations 2-10 (BHT saturates to strongly-taken,
-> BTB hits on each lookup), and `flush` pulses only on iteration 1
-> (cold miss) and iteration 10 (exit). Total run = 47 cycles._
+> _`forward_tb.v` (capture 2) - `flush` firing on the taken `beq`
+> and on the `jal` redirect, with `pc_next` switching to the
+> resolved target._
+
+**`loop10_tb.v` console output** (no waveform - dump is text-only,
+truncated to the non-zero state):
+
+```
+HALT at cycle 47, PC = 00000028
+------ register file ------
+x0  = 00000000
+x1  = 00000037   ; sum(1..10) = 55
+x2  = 0000000a   ; loop counter = 10
+x3  = 0000000a   ; loop bound   = 10
+x4..x31 = 00000000
+------ data memory (words 256..263, 0x400+) ------
+dmem[256..263] = 00000000  (loop body does no stores)
+test/test_benches/dump_tb.v:55: $finish called at 485000 (1ps)
+```
+
+_Confirms the predictor-enabled run: `x1 = 0x37 = 55` is the
+expected sum, the program halts at cycle 47 (matching the 47-cycle
+figure in §4.3), and `predict_taken` was low on iteration 1 (BTB
+cold) and high on iterations 2-10, with `flush` pulsing only on
+iteration 1 (cold miss) and iteration 10 (exit)._
 
 ---
 
