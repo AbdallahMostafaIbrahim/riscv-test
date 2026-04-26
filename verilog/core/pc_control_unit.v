@@ -51,7 +51,7 @@ module pc_control_unit (
     assign pc_rel_taken     = mispred_nt_to_t | (ex_mem_c_jump & ~ex_mem_c_jalr);
     assign pc_rel_not_taken = mispred_t_to_nt;
 
-    // Flush on any misprediction or JALR. Squashes the three wrong-path
+    // Flush on any misprediction or JALR. Bubbles the three wrong
     // instructions in IF/ID/EX.
     assign flush = pc_rel_taken | pc_rel_not_taken | ex_mem_c_jalr;
 
