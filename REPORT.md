@@ -34,12 +34,12 @@ instructions. Compared to Milestone 2, this milestone adds:
 Two bonuses are delivered for this project:
 
 - **Bonus 3 - 2-bit dynamic branch prediction.**
-  Instead of assuming "not taken" every time, the processor now _learns_ from history. It uses two small lookup tables, each with 64 slots: BHT (Branch History Table): Each slot holds a 2-bit counter that tracks how a branch has behaved recently. It takes two wrong predictions in a row to actually change its state, making it more stable than a simple 1-bit predictor. BTB (Branch Target Buffer): Remembers _where_ a branch jumped to last time, so the processor knows which address to fetch from if it predicts "taken." Both tables are checked instantly during the **Fetch** stage (no waiting), and updated later in the **MEM** stage once the branch outcome is known. The big payoff: if the prediction turns out to be correct, the pipeline keeps running smoothly with **no flush needed** — saving those precious wasted cycles.
+  Instead of assuming "not taken" every time, the processor now _learns_ from history. It uses two small lookup tables, each with 64 slots: BHT (Branch History Table): Each slot holds a 2-bit counter that tracks how a branch has behaved recently. It takes two wrong predictions in a row to actually change its state, making it more stable than a simple 1-bit predictor. BTB (Branch Target Buffer): Remembers _where_ a branch jumped to last time, so the processor knows which address to fetch from if it predicts "taken." Both tables are checked instantly during the **Fetch** stage (no waiting), and updated later in the **MEM** stage once the branch outcome is known, so if the prediction turns out to be correct, the pipeline keeps running smoothly with **no flush needed**.
 
 - **Bonus 5 - alternative single-port memory solution.** Rather
-  than the solution proposed in the lecture which makes the CPI=2 , we keep the 5-stage pipeline and stall IF only on
-  cycles when MEM holds the port. Straight-line ALU code therefore
-  runs at CPI 1; CPI degrades toward 2 only on load/store-dense
+  than the solution proposed which makes the CPI=2, we keep the 5-stage pipeline and stall IF only on
+  cycles when MEM holds the port. Continuous ALU code therefore
+  runs at CPI 1, CPI becomes worse toward 2 only on load/store only
   regions.
 
 ## 2. Design
@@ -54,9 +54,7 @@ Two bonuses are delivered for this project:
 
 The five stages share one 32-bit data path, separated by the four
 pipeline registers `if_id_reg`, `id_ex_reg`, `ex_mem_reg`, and
-`mem_wb_reg`. Two backward paths cross the pipe: the WB-to-ID
-register-file write port (negedge), and the MEM-to-IF redirect /
-predictor-update path.
+`mem_wb_reg`.
 
 **IF.** The PC is held in a `register` primitive; next-PC is the
 output of `pc_control_unit`, which has five sources in priority
