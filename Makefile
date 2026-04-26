@@ -1,4 +1,4 @@
-# riscv32Project - Icarus Verilog build
+# Icarus Verilog build
 #
 # Usage:
 #   make run PROG=<name>  - assemble test/asm/<name>.s and run dump_tb on it
