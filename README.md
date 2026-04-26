@@ -60,16 +60,16 @@ alternative solution to the single-port structural hazard (Bonus 5).
   pipeline and stall IF only on the cycles MEM actually holds the
   port. Straight-line ALU code runs at CPI 1; CPI degrades toward 2
   only on load/store-dense regions.
-- **Self-checking testbenches** (all passing, **76 checks total**):
-  - `test/test_benches/i-type_tb.v` (9 checks)
-  - `test/test_benches/r-type_tb.v` (10 checks)
-  - `test/test_benches/s-type_tb.v` (3 checks)
-  - `test/test_benches/load_tb.v`   (5 checks)
-  - `test/test_benches/b-type_tb.v` (12 checks)
-  - `test/test_benches/u-type_tb.v` (2 checks)
-  - `test/test_benches/j-type_tb.v` (5 checks)
-  - `test/test_benches/forward_tb.v` (27 checks)
-  - `test/test_benches/loop10_tb.v` (3 checks)
+- **Self-checking testbenches** (all passing) :
+  - `test/test_benches/i-type_tb.v` 
+  - `test/test_benches/r-type_tb.v` 
+  - `test/test_benches/s-type_tb.v` 
+  - `test/test_benches/load_tb.v`   
+  - `test/test_benches/b-type_tb.v` 
+  - `test/test_benches/u-type_tb.v` 
+  - `test/test_benches/j-type_tb.v` 
+  - `test/test_benches/forward_tb.v` 
+  - `test/test_benches/loop10_tb.v` 
 - **Predictor speedup measurement**: `loop10.s` runs in **47
   cycles** with the predictor and **68 cycles** with the predictor
   forced off (`assign predict_taken = 0;`) - a 21-cycle / ~31%
