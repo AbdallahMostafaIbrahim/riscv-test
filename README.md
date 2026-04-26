@@ -58,8 +58,8 @@ alternative solution to the single-port structural hazard (Bonus 5).
   every-other-cycle issuing scheme described in the project
   requirements (CPI = 2 for every instruction), we keep a 5-stage
   pipeline and stall IF only on the cycles MEM actually holds the
-  port. Straight-line ALU code runs at CPI 1; CPI degrades toward 2
-  only on load/store-dense regions.
+  port. Continuous ALU code runs at CPI 1; CPI increases toward 2
+  only on load/store heavy regions.
 - **Self-checking testbenches** (all passing) :
   - `test/test_benches/i-type_tb.v` 
   - `test/test_benches/r-type_tb.v` 
