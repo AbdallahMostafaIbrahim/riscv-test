@@ -2,9 +2,9 @@
 *
 * Module: forwarding_unit.v
 * Project: RISCV Processor
-* Description: EX-stage forwarding. Picks the freshest rs1/rs2 from
-*              EX/MEM, MEM/WB, or the id_ex register. EX/MEM wins
-*              over MEM/WB. Load-use is the hazard unit's job.
+* Description: EX-stage forwarding. Picks the rs1/rs2 from
+*              EX/MEM, MEM/WB, or the id_ex register.
+*              EX/MEM wins over MEM/WB.
 *
 *              forward_a / forward_b encoding:
 *                2'b00 - no forward (id_ex rs1/rs2)

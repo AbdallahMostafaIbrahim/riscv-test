@@ -13,6 +13,9 @@ This milestone delivers a **5-stage pipelined** RV32I core (IF - ID -
 EX - MEM - WB) backed by a **single single-ported, byte-addressable
 memory** that holds both instructions and data. Hazards are handled
 with a forwarding unit, a hazard/stall unit, and a MEM-stage flush.
+On top of the baseline we deliver **two bonuses**: a 2-bit dynamic
+branch predictor with a branch target buffer (Bonus 3) and an
+alternative solution to the single-port structural hazard (Bonus 5).
 
 ### What Works
 
@@ -28,12 +31,11 @@ with a forwarding unit, a hazard/stall unit, and a MEM-stage flush.
   freeze the PC once they reach ID and mark the program as done once
   they reach WB.
 - **5-stage pipeline**: IF - ID - EX - MEM - WB with four pipeline
-  registers (`if_id`, `id_ex`, `ex_mem`, `mem_wb`) built from the
+  registers (`if_id_reg`, `id_ex_reg`, `ex_mem_reg`, `mem_wb_reg`)
+  living under `verilog/core/stages/`, each built on top of the
   `register` primitive.
 - **Unified single-port memory** (`verilog/memory/memory.v`): 4 KiB,
   1024 x 32-bit words, byte-write mask, shared between IF and MEM.
-  The hazard unit stalls IF on every load/store cycle so the two
-  consumers never collide at the port.
 - **Forwarding** (`verilog/core/forwarding_unit.v`): EX/MEM and
   MEM/WB bypass into EX for 1- and 2-instruction RAW hazards.
 - **Stalls** (`verilog/core/hazard_unit.v`): 1-cycle load-use stall
@@ -42,10 +44,23 @@ with a forwarding unit, a hazard/stall unit, and a MEM-stage flush.
 - **3-instruction RAW** handled by writing the register file on the
   **negative clock edge** so WB writes land before ID reads in the
   same cycle.
-- **Flush on taken branch / JAL / JALR**: the three wrong-path
+- **Flush on misprediction / JAL / JALR**: the three wrong-path
   instructions in IF, ID, and EX are bubbled by forcing the
-  pipeline-register inputs to zero.
-- **Self-checking testbenches** (all passing):
+  pipeline-register inputs to zero. Correctly-predicted branches do
+  not flush.
+- **Bonus 3 - 2-bit dynamic branch predictor**
+  (`verilog/core/branch_predictor.v`): 64-entry BHT with 2-bit
+  saturating counters and a 64-entry BTB (valid + 24-bit tag +
+  32-bit target), both indexed by `PC[7:2]`. Looked up
+  combinationally in IF, updated synchronously in MEM. The next-PC
+  selector lives in `verilog/core/pc_control_unit.v`.
+- **Bonus 5 - selective single-port stalling**: rather than the
+  every-other-cycle issuing scheme described in the project
+  requirements (CPI = 2 for every instruction), we keep a 5-stage
+  pipeline and stall IF only on the cycles MEM actually holds the
+  port. Straight-line ALU code runs at CPI 1; CPI degrades toward 2
+  only on load/store-dense regions.
+- **Self-checking testbenches** (all passing, **76 checks total**):
   - `test/test_benches/i-type_tb.v` (9 checks)
   - `test/test_benches/r-type_tb.v` (10 checks)
   - `test/test_benches/s-type_tb.v` (3 checks)
@@ -53,16 +68,22 @@ with a forwarding unit, a hazard/stall unit, and a MEM-stage flush.
   - `test/test_benches/b-type_tb.v` (12 checks)
   - `test/test_benches/u-type_tb.v` (2 checks)
   - `test/test_benches/j-type_tb.v` (5 checks)
-- **Hazard smoke tests** (runnable with `dump_tb.v`):
-  - `test/asm/pipe.s`    - minimal RAW + branch pipeline exercise.
-  - `test/asm/forward.s` - full scorecard covering 1-, 2-, and
-    3-instruction RAW, load-use stall, single-port structural
-    stall, and branch / JAL / JALR flushes.
+  - `test/test_benches/forward_tb.v` (27 checks)
+  - `test/test_benches/loop10_tb.v` (3 checks)
+- **Predictor speedup measurement**: `loop10.s` runs in **47
+  cycles** with the predictor and **68 cycles** with the predictor
+  forced off (`assign predict_taken = 0;`) - a 21-cycle / ~31%
+  reduction on a 10-iteration counting loop.
 
 ### What Doesn't Work / What's Deferred
 
-- No bonuses (no RV32IC, no RV32IM, no branch prediction, no
-  early-resolve branches, no alt. structural-hazard fix).
+- Bonus 1 (RV32IC compressed), Bonus 2 (RV32IM mul/div), Bonus 4
+  (move branch resolve to ID), and Bonus 6 (random program
+  generator) are not implemented.
+- The branch predictor scope is **conditional branches only**: JAL
+  and JALR never train the BHT/BTB and always flush three bubbles.
+  This was a deliberate scope choice - extending the predictor to
+  unconditional jumps would be cheap but is left for future work.
 
 ## Assumptions
 
@@ -74,15 +95,17 @@ with a forwarding unit, a hazard/stall unit, and a MEM-stage flush.
   the program, words `256..1023` (`0x400..0xFFF`) are data. Test
   programs set `x28 = 0x400` and use it as the data base so loads
   and stores cannot overwrite instructions.
-- **Reset:** asynchronous active-high `rst` clears PC and register
-  file and zeroes all pipeline registers.
+- **Reset:** asynchronous active-high `rst` clears PC, register
+  file, BHT (initialised to `2'b01` weakly-not-taken), BTB valid
+  bits, and all pipeline registers.
 - **Halt:** once a halting opcode reaches ID, `halt_pending` freezes
   PC and IF/ID so no new instructions enter the pipeline while the
   earlier ones drain. `halted` goes high once the halt has reached
   WB; the testbenches wait on this.
-- **Branch resolution:** branches, JAL, and JALR all resolve in MEM
-  (textbook MIPS-style). A taken redirect flushes three bubbles
-  into IF/ID, ID/EX, and EX/MEM.
+- **Branch resolution:** branches consult the predictor in IF and
+  speculatively fetch from `predict_target` if the BHT MSB is high
+  and the BTB tags match. Conditional branches, JAL, and JALR all
+  resolve in MEM; mispredictions / JAL / JALR flush three bubbles.
 - **Register file:** negative-edge triggered write so WB in the
   first half of the cycle is visible to ID in the second half.
 
@@ -103,9 +126,15 @@ make test-b-type
 make test-u-type
 make test-j-type
 
+# Hazard / pipeline self-checking tests:
+make test-forward      # 27 checks: forwarding, load-use, branch / JAL flush
+make test-loop10       # 3 checks + cycle count for branch-predictor speedup
+
+# Run everything:
+make test-all
+
 # Ad-hoc programs (assembles and dumps reg file + data memory):
-make run PROG=pipe        # pipeline smoke test
-make run PROG=forward     # hazard / flush scorecard
+make run PROG=fibonacci
 ```
 
 `test-<name>` assembles `test/asm/<name>.s` into
@@ -113,13 +142,15 @@ make run PROG=forward     # hazard / flush scorecard
 `memory.v` reads via `$readmemh`), and runs the matching testbench
 under `test/test_benches/<name>_tb.v`. `make run PROG=<name>` is
 the same pipeline but against the generic `dump_tb.v` that prints
-every register and the first 8 words of data memory.
+every register and the first 8 words of data memory. `make
+test-all` discovers every `<name>.s` that has a matching
+`<name>_tb.v` and reports pass / fail per test.
 
 ### Vivado
 
 In Vivado, pick the target `test/mem/<name>.hex` as instruction
 memory (copy it to `inst.hex`, which is what `memory.v` reads on
-line 47), add the Verilog under `verilog/` to the project, and
+line 28), add the Verilog under `verilog/` to the project, and
 select the corresponding `<name>_tb.v` as the simulation top.
 
 ## Directory Layout
@@ -129,8 +160,9 @@ Mapped against the deliverable structure in the project description:
 ```
 .
 ├── README.md               # this file
-├── REPORT.pdf              # Milestone 3 Report
+├── REPORT.md               # Milestone 3 report (with bonuses)
 ├── Makefile                # iverilog build / test driver
+├── schematic.png           # pipelined datapath diagram
 ├── tools/
 │   └── asm.py              # minimal RV32I assembler (.s -> .hex)
 ├── journal/                # one journal per team member
@@ -138,9 +170,12 @@ Mapped against the deliverable structure in the project description:
 │   └── john.md
 ├── verilog/                # RTL
 │   ├── core/               # defines.v, alu.v, control_unit.v,
-│   │                       # branch_unit.v, immediate_gen.v,
-│   │                       # reg_file.v, forwarding_unit.v,
-│   │                       # hazard_unit.v, riscv.v (top)
+│   │   │                   # branch_unit.v, immediate_gen.v,
+│   │   │                   # reg_file.v, forwarding_unit.v,
+│   │   │                   # hazard_unit.v, branch_predictor.v,
+│   │   │                   # pc_control_unit.v, riscv.v (top)
+│   │   └── stages/         # if_id_reg.v, id_ex_reg.v,
+│   │                       # ex_mem_reg.v, mem_wb_reg.v
 │   ├── memory/             # memory.v (unified, single-port),
 │   │                       # load_unit.v, store_unit.v
 │   └── primitives/         # flip_flop.v, full_adder.v, mux.v,
@@ -148,8 +183,9 @@ Mapped against the deliverable structure in the project description:
 └── test/
     ├── asm/                # r-type.s, i-type.s, s-type.s, load.s,
     │                       # b-type.s, u-type.s, j-type.s,
-    │                       # pipe.s, forward.s
+    │                       # forward.s, loop10.s, fibonacci.s
     ├── mem/                # assembled *.hex; inst.hex is what
     │                       # memory.v $readmemh's on reset
-    └── test_benches/       # <name>_tb.v per type + dump_tb.v
+    └── test_benches/       # <name>_tb.v per type plus forward_tb.v,
+                            # loop10_tb.v, and dump_tb.v
 ```

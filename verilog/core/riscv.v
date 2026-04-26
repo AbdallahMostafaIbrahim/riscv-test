@@ -25,8 +25,9 @@ module riscv (
     wire        stall;
     wire        flush;
 
-    // flush overrides halting so a MEM redirect takes effect even if an
-    // ebreak on the speculative fall-through path has already entered ID/EX.
+    // We prioritize flush over halt in case we have branch instruction
+    // then a an ebreak instruction following it, so we block the halt
+    // if it was an invalid branch prediction that would've been flushed.
     assign pc_load = flush | (~halting & ~stall);
 
     // IF Stage

@@ -55,7 +55,12 @@ DEFAULT_PROG := default
 # User-selected program for `make run` / `make asm`
 PROG ?= $(DEFAULT_PROG)
 
-.PHONY: run asm clean
+.PHONY: run asm test-all clean
+
+# Auto-discover tests: every test/asm/<name>.s that has a matching
+# test/test_benches/<name>_tb.v.
+TESTS := $(sort $(filter $(patsubst $(TB_DIR)/%_tb.v,%,$(wildcard $(TB_DIR)/*_tb.v)), \
+                         $(patsubst $(ASM_DIR)/%.s,%,$(wildcard $(ASM_DIR)/*.s))))
 
 # Keep generated .hex files -- make treats them as intermediates of test-%
 # otherwise and deletes them after the run.
@@ -93,6 +98,26 @@ test-%: $(BUILD) $(MEM_DIR)/%.hex $(TB_DIR)/%_tb.v
 	$(CP) $(call FIXPATH,$(MEM_DIR)/$*.hex) $(call FIXPATH,$(MEM_DIR)/inst.hex)
 	iverilog $(IVERILOG_FLAGS) -o $(BUILD)/$* $(RTL_SRC) $(TB_DIR)/$*_tb.v
 	cd $(MEM_DIR) && vvp ../../$(BUILD)/$*
+
+# --------------------------------------------------------------------------
+# Run every discoverable test. Keeps going on failure and prints a summary;
+# exits non-zero if any test failed. A test is considered passing only if
+# the testbench prints "ALL TESTS PASSED" (vvp itself always exits 0).
+# --------------------------------------------------------------------------
+test-all:
+	@fail=0; pass=0; failed=""; \
+	for t in $(TESTS); do \
+	    echo "=== test-$$t ==="; \
+	    if out=$$($(MAKE) --no-print-directory test-$$t 2>&1) \
+	       && echo "$$out" | grep -q "ALL TESTS PASSED"; then \
+	        echo "$$out"; pass=$$((pass+1)); \
+	    else \
+	        echo "$$out"; fail=$$((fail+1)); failed="$$failed $$t"; \
+	    fi; \
+	done; \
+	echo ""; \
+	echo "==== test-all: $$pass passed, $$fail failed ===="; \
+	if [ $$fail -ne 0 ]; then echo "Failed:$$failed"; exit 1; fi
 
 clean:
 	-$(RMRF) $(BUILD) $(NULL)
