@@ -17,31 +17,7 @@
       "Bash(make run:*)",
       "Bash(make test-j-type:*)",
       "Bash(make test-b-type:*)",
-      "Bash(make test-r-type *)",
-      "Bash(awk { if \\(length\\($0\\) > 80\\) print NR\": \"length\\($0\\)\" chars: \"$0 } *)",
-      "Bash(iverilog *)",
-      "Bash(awk '{ if \\(length\\($0\\) > 80\\) print NR\": \"length\\($0\\)\" chars\" }' /Users/abdallah/riscv/verilog/core/riscv.v)",
-      "Bash(awk '{ if \\(length\\($0\\) > 80\\) print NR\": \"length\\($0\\)\" chars\" }' /Users/abdallah/riscv/verilog/core/riscv.v /Users/abdallah/riscv/verilog/core/forwarding_unit.v)",
-      "Bash(awk '{ if \\(length\\($0\\) > 80\\) print NR\": \"length\\($0\\)\" chars \"FILENAME }' /Users/abdallah/riscv/verilog/core/riscv.v /Users/abdallah/riscv/verilog/core/hazard_unit.v)",
-      "Bash(awk '{ if \\(length\\($0\\) > 80\\) print NR\": \"length\\($0\\)\" chars \"FILENAME }' /Users/abdallah/riscv/verilog/core/riscv.v)",
-      "Bash(command -v iverilog)",
-      "Bash(make test-i-type *)",
-      "Bash(make test-s-type *)",
-      "Bash(make test-u-type *)",
-      "Bash(make test-load *)",
-      "Bash(where iverilog *)",
-      "Bash(tee /tmp/compile.log)",
-      "Bash(vvp /tmp/btype.vvp)",
-      "Bash(make test-loop10 *)",
-      "Bash(cp test/mem/loop10.hex test/mem/inst.hex)",
-      "Bash(vvp /tmp/trace)",
-      "Bash(vvp /tmp/trace_base)",
-      "Bash(git -C E:/Stuff/gam3a/riscv-test log --all --diff-filter=D --summary)",
-      "Bash(git -C E:/Stuff/gam3a/riscv-test log --all --oneline --name-only)",
-      "Bash(make test-forward *)",
-      "Bash(tclsh -c 'set fp [open vivado_project.tcl r]; set src [read $fp]; close $fp; if {[catch {info complete $src} err]} {puts \"syntax error: $err\"; exit 1}; if {![info complete $src]} {puts \"incomplete script\"; exit 1}; puts \"vivado_project.tcl: parse OK\"')",
-      "Bash(tclsh -c 'set fp [open vivado_run.tcl r]; set src [read $fp]; close $fp; if {[catch {info complete $src} err]} {puts \"syntax error: $err\"; exit 1}; if {![info complete $src]} {puts \"incomplete script\"; exit 1}; puts \"vivado_run.tcl: parse OK\"')",
-      "Bash(make test-all *)"
+      "Bash(make test-r-type *)"
     ]
   }
 }
